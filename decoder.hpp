@@ -11,7 +11,7 @@
 #define decoder_h
 
 #include <cmath>
-#include<cstring>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <vector>

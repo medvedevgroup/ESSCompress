@@ -135,7 +135,7 @@ string modename[] = {"Fwd", "indegree_dfs", "indegree_dfs_initial_sort_only", "o
 /*
  FILENAMES
  */
-string ofileTipOutput = "ust_ess_abs.txt";
+string ofileTipOutput = "fa.ess";
 string ofileTipDebug = "tipDebug.txt";
 
 namespace MyTypes
@@ -796,7 +796,7 @@ int pullOutConnectedComponent(bool pullit = false)
                     if (!ccVisited[tonode])
                         stack.push(tonode);
                 }
-                    
+
             }
         }
     }
@@ -831,7 +831,7 @@ int pullOutConnectedComponent(bool pullit = false)
                 break;
         }
     }
-    
+
 
     if (pullit)
     {
@@ -967,7 +967,7 @@ int read_unitig_file(const string& unitigFileName, vector<unitig_struct_t>& unit
     //cout << "Complete reading input unitig file (bcalm2 file)." << endl;
     return EXIT_SUCCESS;
 }
- 
+
 ofstream tipFile;
 ofstream tipDebugFile;
 

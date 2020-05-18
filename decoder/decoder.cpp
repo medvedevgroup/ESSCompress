@@ -111,14 +111,15 @@ int main(int argc, char** argv) {
     //int K=31, string ENCODED_FILE= "tipOutput.txt"
 
     string outputFilename = remove_extension(basename(pathname));
+
     if(tip_mode){
-        decodeTip(K, pathname, outputFilename+".esstip");
+        decodeTip(K, pathname, pathname+".spss.fa");
         cout<<"ESS-Tip-Compress decoding done!"<<endl;
-        cout<<"Output SPSS is in file \""<<outputFilename+".fa"<<"\""<<endl;
+        cout<<"Output SPSS is in file \""<<outputFilename+".spss.fa"<<"\""<<endl;
     }else{
-        decodeOneAbsorb(K, pathname, pathname+".ess");
+        decodeOneAbsorb(K, pathname, outputFilename+".spss.fa");
         cout<<"ESS-Compress decoding done!"<<endl;
-        cout<<"Output SPSS is in file \""<<outputFilename+".fa"<<"\""<<endl;
+        cout<<"Output SPSS is in file \""<<outputFilename+".spss.fa"<<"\""<<endl;
     }
 
 

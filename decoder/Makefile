@@ -3,7 +3,7 @@ CFLAGS=-c -std=c++11
 
 SOURCES=decoder.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
-EXECUTABLE=decoder
+EXECUTABLE=essDecompress
 
 all: $(SOURCES) $(EXECUTABLE)
 	rm decoder.o
@@ -18,24 +18,18 @@ $(EXECUTABLE): $(OBJECTS)
 #tell that any header change should cause a rebuild
 #decoder.cpp: decoder.hpp
 
-
-decoderd: decoder.cpp
-	$(CC) $(CFLAGS) decoder.cpp -o decoder.o
-	$(CC) decoder.o -o decoder.out
-
 clean:
-	rm -f *.o decoder
-	rm -f *.ess *.esstip
+	rm -f *.o essDecompress
 
 clear:
-	rm -f *.ess *.esstip
+	rm -f *.spss.fa
 	rm -f *.o
 
 .SILENT:run
 
 test1:
-	./decoder -i $(PWD)/ust_ess_tip.txt -k 11 -t 0
+	./essDecompress -i $(PWD)/chol.ess -k 11 -t 0
 
 test2:
-	./decoder -i $(PWD)/ust_ess_abs.txt -k 11 -t 1
+	./essDecompress -i $(PWD)/chol.esstip -k 11 -t 1
 
