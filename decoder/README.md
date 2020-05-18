@@ -12,7 +12,7 @@ GCC >= 4.8 or a C++11 capable compiler
 To compile from source:
 
     git clone https://github.com/medvedevgroup/ESSCompress
-    cd decoder
+    cd ESSCompress/decoder
     make
 
 
