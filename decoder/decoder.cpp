@@ -114,11 +114,11 @@ int main(int argc, char** argv) {
     if(tip_mode){
         decodeTip(K, pathname, outputFilename+".esstip");
         cout<<"ESS-Tip-Compress decoding done!"<<endl;
-        cout<<"Output SPSS is in file \""<<outputFilename+".esstip"<<"\""<<endl;
+        cout<<"Output SPSS is in file \""<<outputFilename+".fa"<<"\""<<endl;
     }else{
         decodeOneAbsorb(K, pathname, pathname+".ess");
         cout<<"ESS-Compress decoding done!"<<endl;
-        cout<<"Output SPSS is in file \""<<outputFilename+".ess"<<"\""<<endl;
+        cout<<"Output SPSS is in file \""<<outputFilename+".fa"<<"\""<<endl;
     }
 
 
