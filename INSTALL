@@ -1,0 +1,45 @@
+set -e 
+
+make
+
+echo "ESS-Compress core program is successfully installed."
+echo "Now installing third party softwares (note that: you can skip the rest of the steps and still try out our tool!)"
+
+#CMake 3.1+; see http://www.cmake.org/cmake/resources/software.html
+#C++/11 capable compiler (e.g. gcc 4.7+, clang 3.5+, Apple/clang 6.0+).
+
+mkdir -p dependencies
+cd dependencies
+
+
+echo "Now installing DSK........"
+# get a local copy of source code of DSK
+git clone --recursive https://github.com/GATB/dsk.git
+
+# compile the code an run a simple test on your computer
+cd dsk
+sh INSTALL
+echo $PWD
+ln build/bin/dsk ../../bin/dskESS
+ln build/bin/dsk2ascii ../../bin/dsk2asciiESS
+
+
+echo "Now installing BCALM........"
+cd ../../
+git clone --recursive https://github.com/GATB/bcalm 
+cd bcalm
+mkdir build;  cd build;  cmake ..;  make -j 8 #after this we are inside build
+ln bcalm ../../bin/bcalmESS
+
+echo "Now installing MFCompress........"
+cd ../../
+cd src/mfc1.01/
+make -f Makefile.linux
+ln MFCompressC ../../bin/mfcESS
+ln MFCompressD ../../bin/mfcdESS
+
+cd ../../
+export PATH="$PWD/bin:$PATH"
+source ~/.bashrc
+
+

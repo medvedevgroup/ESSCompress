@@ -5,8 +5,6 @@
 //  Copyright © 2019 Penn State. All rights reserved.
 //
 
-//#ifndef decoder_h
-//#define decoder_h
 #include <ctype.h>
 #include<string>
 #include <stdio.h>
@@ -18,11 +16,18 @@
 using namespace std;
 
 string remove_extension(const string& filename) {
+    string out;
     size_t lastdot = filename.find_last_of(".");
-    if (lastdot == std::string::npos) return filename;
-    return filename.substr(0, lastdot);
+    if (lastdot == std::string::npos) {
+        out = filename;
+    }else{
+        out = filename.substr(0, lastdot);
+    }
+    if(out.length()==0){
+        out = "out";
+    }
+    return out;
 }
-
 
 string basename(const string& s) {
 
@@ -49,8 +54,32 @@ bool isFileExist(string& fileName) {
     return errno != ENOENT;
 }
 
-int main(int argc, char** argv) {
 
+vector<string> split (const string &s, char delim) {
+    vector<string> result;
+    stringstream ss (s);
+    string item;
+
+    while (getline (ss, item, delim)) {
+        result.push_back (item);
+    }
+
+    return result;
+}
+
+void parseHeader(string pathname, int &K, int& MODE){
+    ifstream infile(pathname);
+    string sLine;
+    getline(infile, sLine);
+    
+    vector<string> v = split(sLine, '_');
+    K = std::stoi(v[1]);
+    MODE = std::stoi(v[2]);
+    infile.close();
+}
+
+int main(int argc, char** argv) {
+    /*
     const char* nvalue = "" ;
     int K=0;
     string filename = "ust_ess_abs.txt";
@@ -91,6 +120,8 @@ int main(int argc, char** argv) {
                 }
             }
 
+    
+    
 
     if(K==0 || strcmp(nvalue, "")==0){
         fprintf(stderr, "Usage: %s -k <kmer size> -i <input-file-name>\n", argv[0]);
@@ -99,9 +130,12 @@ int main(int argc, char** argv) {
     // if(tip_mode){
     //     filename = "ust_ess_tip.txt";
     // }
-
-
-    string pathname = string(nvalue);
+     
+     string pathname = string(nvalue);
+     */
+    
+    std::string pathname = argv[1];
+    
     if(!isFileExist(pathname)){
         cout<<"File \""<<pathname<<"\""<<"does not exist."<<endl;
         exit(EXIT_FAILURE);
@@ -110,16 +144,21 @@ int main(int argc, char** argv) {
     //pathname+="/"+filename;
     //int K=31, string ENCODED_FILE= "tipOutput.txt"
 
-    string outputFilename = remove_extension(basename(pathname));
-
+    int K;
+    int MODE;
+    //string outputFilename = remove_extension(basename(pathname));
+    string outputFilename = "kmers.";
+    parseHeader(pathname, K, MODE);
+    bool tip_mode = MODE;
+    
     if(tip_mode){
-        decodeTip(K, pathname, pathname+".spss.fa");
+        decodeTip(K, pathname, outputFilename+"esstip.spss");
         cout<<"ESS-Tip-Compress decoding done!"<<endl;
-        cout<<"Output SPSS is in file \""<<outputFilename+".spss.fa"<<"\""<<endl;
+        cout<<"Output SPSS is in file \""<<outputFilename+"esstip.spss"<<"\""<<endl;
     }else{
-        decodeOneAbsorb(K, pathname, outputFilename+".spss.fa");
+        decodeOneAbsorb(K, pathname, outputFilename+"ess.spss");
         cout<<"ESS-Compress decoding done!"<<endl;
-        cout<<"Output SPSS is in file \""<<outputFilename+".spss.fa"<<"\""<<endl;
+        cout<<"Output SPSS is in file \""<<outputFilename+"ess.spss"<<"\""<<endl;
     }
 
 
@@ -130,6 +169,3 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-
-
-//#endif /* decoder_h */

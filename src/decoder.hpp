@@ -1,8 +1,10 @@
+// VERSION 2.0
+
 //
-//  decoder.h
+//  decoder.hpp
 //
 //  Created by Amatur Rahman on 28/11/19.
-//  Copyright © 2019 Penn State. All rights reserved.
+//  Copyright © 2019 psu. All rights reserved.
 //
 //
 
@@ -10,37 +12,67 @@
 #define decoder_h
 
 #include <cmath>
-#include<cstring>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <vector>
 #include <assert.h>
 #include <stdint.h>
 #include <unistd.h>
+
+#include "misc.hpp"
 using namespace std;
 
-inline string reverseComplement(string base) {
-    size_t len = base.length();
-    char* out = new char[len + 1];
-    out[len] = '\0';
-    for (int i = 0; i < len; i++) {
-        if (base[i] == 'A') out[len - i - 1] = 'T';
-        else if (base[i] == 'C') out[len - i - 1] = 'G';
-        else if (base[i] == 'G') out[len - i - 1] = 'C';
-        else if (base[i] == 'T') out[len - i - 1] = 'A';
-    }
-    string outString(out);
-    free(out);
-    return outString;
-}
+#ifndef NDEBUG
+#   define ASSERT(condition, message) \
+    do { \
+        if (! (condition)) { \
+            std::cerr << "Assertion `" #condition "` failed in " << __FILE__ \
+                      << " line " << __LINE__ << ": " << message << std::endl; \
+            std::terminate(); \
+        } \
+    } while (false)
+#else
+#   define ASSERT(condition, message) do { } while (false)
+#endif
 
+#define NONDNA_START_TIP_SUF '('
+#define NONDNA_END_TIP_SUF ')'
+#define NONDNA_START_TIP_PRE '{'
+#define NONDNA_END_TIP_PRE '}'
+#define NONDNA_PLUS "+"
+#define NONDNA_MINUS "-"
+#define NONDNA_START "["
+#define NONDNA_END "]"
 
-int decodeTip(int K, string UNITIG_FILE="ust_ess_tip.txt", string esstip_ofile = "ess_tip_d.fa"){
+//
+//string reverseComplement(string base)
+//{
+//    size_t len = base.length();
+//    char *out = new char[len + 1];
+//    out[len] = '\0';
+//    for (int i = 0; i < len; i++)
+//    {
+//        if (base[i] == 'A')
+//            out[len - i - 1] = 'T';
+//        else if (base[i] == 'C')
+//            out[len - i - 1] = 'G';
+//        else if (base[i] == 'G')
+//            out[len - i - 1] = 'C';
+//        else if (base[i] == 'T')
+//            out[len - i - 1] = 'A';
+//    }
+//    string outString(out);
+//    free(out);
+//    return outString;
+//}
+
+int decodeTip(int K, string UNITIG_FILE="ust_ess_tip.txt", string OUT_FILE = "tip.fa" ){
     ifstream unitigFile;
     unitigFile.open(UNITIG_FILE);
 
     ofstream outFile;
-    outFile.open(esstip_ofile);
+    outFile.open(OUT_FILE);
 
     string line;
     bool startPrefCut = false;
@@ -122,74 +154,113 @@ int decodeTip(int K, string UNITIG_FILE="ust_ess_tip.txt", string esstip_ofile =
 void updateCurrOverlap(char c, string& lastk1, int K){
     if(lastk1.length() < K - 1){
         lastk1 += c;
+        //printf("baje case");
     }else{
         lastk1 = lastk1.substr(1, K-2) + c;
     }
 }
 
-vector<string> decompressEnclosed(string& s, int& i, string overlapFromParent, int K, ofstream & FOUT){
-    vector<string> S;
-    string sOut;
+void decompressEnclosed(string& s, int& i, string overlapFromParent, int K, ofstream & FOUT){
+    //assert(overlapFromParent.length()==K-1);
+    ASSERT(overlapFromParent.length()==K-1, "The +/- should be replace by a string of length " << K-1 << ", but we receive string of length " << overlapFromParent.length() << "\n");
+
+    string sOut = "";
     string currOverlap;
+
+    stack<tuple<string, string, string> > decstack;
 
     while(i < s.length()){
         char c = s[i++];
         if(c=='['){
-            vector<string> S1 = decompressEnclosed(s, i,currOverlap, K, FOUT);
-            for(int j = 0; j < S1.size(); j++){
-                //S.push_back(S1.at(j));
-            }
+            decstack.push(make_tuple(currOverlap, overlapFromParent, sOut));
+            overlapFromParent=currOverlap;
+            sOut="";
         }else if(c==']'){
-            //S.push_back(sOut);
             FOUT<<">\n"<<sOut<<endl;
-            return S;
+            if(!decstack.empty()){
+                currOverlap =  get<0>(decstack.top());
+                overlapFromParent = get<1>(decstack.top());
+                sOut = get<2>(decstack.top());
+                decstack.pop();
+            }else{
+                return;
+            }
         }else if(c=='+'){
             sOut += overlapFromParent;
             //update currOverlap
             currOverlap = overlapFromParent;
+            //at this point overlapFromParent is useless
+            
         }else if(c=='-'){
             sOut += reverseComplement(overlapFromParent);
             //update currOverlap
             currOverlap = reverseComplement(overlapFromParent);
+            //at this point overlapFromParent is useless
         }else{
             sOut += c;
             updateCurrOverlap(c,currOverlap, K);
             //update currOverlap
         }
-
     }
-    return S;
 }
+
+//vector<string> decompressEnclosed(string& s, int& i, string overlapFromParent, int K, ofstream & FOUT){
+//    vector<string> S;
+//    string sOut;
+//    string currOverlap;
+//
+//    while(i < s.length()){
+//        char c = s[i++];
+//        if(c=='['){
+//            vector<string> S1 = decompressEnclosed(s, i,currOverlap, K, FOUT);
+//            for(int j = 0; j < S1.size(); j++){
+//                //S.push_back(S1.at(j));
+//            }
+//        }else if(c==']'){
+//            //S.push_back(sOut);
+//            FOUT<<">\n"<<sOut<<endl;
+//            return S;
+//        }else if(c=='+'){
+//            sOut += overlapFromParent;
+//            //update currOverlap
+//            currOverlap = overlapFromParent;
+//        }else if(c=='-'){
+//            sOut += reverseComplement(overlapFromParent);
+//            //update currOverlap
+//            currOverlap = reverseComplement(overlapFromParent);
+//        }else{
+//            sOut += c;
+//            updateCurrOverlap(c,currOverlap, K);
+//            //update currOverlap
+//        }
+//
+//    }
+//    return S;
+//}
 
 vector<string> decompress(string& s, int K, ofstream & FOUT){
     vector<string> S;
     string sOut;
     string currOverlap;
-
     int i = 0;
     while(i < s.length()){
         char c = s[i++];
            if(c=='['){
-               vector<string> S1 = decompressEnclosed(s, i,currOverlap, K, FOUT);
-               for(int j = 0; j < S1.size(); j++){
-                   //S.push_back(S1.at(j));
-               }
+               decompressEnclosed(s, i,currOverlap, K, FOUT);
            }else{
                sOut += c;
-               updateCurrOverlap(c, currOverlap, K);
-               //update currOverlap
+               updateCurrOverlap(c, currOverlap, K);  //update currOverlap
            }
     }
-
-
    // cout<< "Complete conversion of: " <<s << endl;
-    //S.push_back(sOut);
     FOUT<<">\n"<<sOut<<endl;
     return S;
 }
 
 
-void decodeOneAbsorb(int K, string ENCODED_FILE= "ust_ess_abs.txt", string OUT_FA_FILE="ess_d.fa"){
+///Users/Sherlock/Library/Developer/Xcode/DerivedData/bcl-awuuvnjbkkmukneqtvxvqashsbtu/Build/Products/Debug/tipOutput.txt
+///Users/Sherlock/amaturWS/testEncoded.txt
+void decodeOneAbsorb(int K, string ENCODED_FILE= "ust_ess_abs.txt", string OUT_FA_FILE="absorbDecompressed.fa"){
     ifstream encodedFile;
     encodedFile.open(ENCODED_FILE);
 
@@ -201,17 +272,31 @@ void decodeOneAbsorb(int K, string ENCODED_FILE= "ust_ess_abs.txt", string OUT_F
     vector<int> nWalkNo;
     vector<string> collectedStrings;
     while (getline(encodedFile, line)) {
+        //cout<<line<<endl;
         if (line.empty() || line.substr(0, 1).compare(">") == 0) {
 
         } else {
             nWalks++;
             vector<string> S1 = decompress(line, K, outFile);
             for(int j = 0; j < S1.size(); j++){
+                //collectedStrings.push_back(S1.at(j));
                 nWalkNo.push_back(nWalks);
             }
+
         }
     }
     encodedFile.close();
+
+    int i =0;
+
+    //double memvmKB,memrssKB;
+    //process_mem_usage(memvmKB, memrssKB);
+    //   cout<<"inside decoder memory (virtual) to do ONLY UST DFS (KB)"<<memvmKB<<endl;
+    //   cout<<"inside decoder  memory (rss) to do ONLY UST DFS (KB)"<<memrssKB<<endl;
+    for(string s: collectedStrings){
+        //outFile<<">"<<nWalkNo[i++]<<"\n"<<s<<endl;
+        //cout<<s<<endl;
+    }
     outFile.close();
 }
 
