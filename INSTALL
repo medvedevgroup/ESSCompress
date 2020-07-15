@@ -1,4 +1,6 @@
-set -e 
+#!/bin/bash
+
+set -e
 
 make
 
@@ -26,7 +28,7 @@ ln build/bin/dsk2ascii ../../bin/dsk2asciiESS
 
 echo "Now installing BCALM........"
 cd ../../
-git clone --recursive https://github.com/GATB/bcalm 
+git clone --recursive https://github.com/GATB/bcalm
 cd bcalm
 mkdir build;  cd build;  cmake ..;  make -j 8 #after this we are inside build
 ln bcalm ../../bin/bcalmESS
@@ -40,6 +42,4 @@ ln MFCompressD ../../bin/mfcdESS
 
 cd ../../
 export PATH="$PWD/bin:$PATH"
-source ~/.bashrc
-
-
+#source ~/.bashrc

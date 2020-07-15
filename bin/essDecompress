@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e
+ENAME=$(basename $1 .essc)
+ENAME="$ENAME.essd"
+mfcdESS $1
+MFCDFILE="$1.d"
+ISTIP=$(head -n 1 $MFCDFILE | cut -d'_' -f3)
+
+if [[ "$ISTIP" -eq "1" ]]; then
+    cat $MFCDFILE | tr "a" "{" | tr "c" "}" | tr "g" "(" | tr "t" ")" | awk -F=' ' '{print ""$1}' > $ENAME
+    essD $ENAME 
+    mv kmers.esstip.spss $ENAME 
+else
+    cat $MFCDFILE | tr "a" "+" | tr "c" "-" | tr "g" "[" | tr "t" "]" | awk -F=' ' '{print ""$1}' > $ENAME
+    essD $ENAME 
+    mv kmers.ess.spss $ENAME 
+fi
+
+echo "Decompressed output is in '$ENAME' (a spectrum-preserving string set)"
+rm "$MFCDFILE"
