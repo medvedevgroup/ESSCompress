@@ -53,13 +53,13 @@ Compression:
 	
        Syntax: essCompress [parameters]   
        
-       mandatory parameters: 
-       -i [filepath]     Full path for input file.        
+       mandatory parameters:   
+           -i [filepath]     Full path for input file.        
 	   -k [INT]          k-mer size.
 	   -a [INT]          DEFAULT=1. Sets a threshold X below which k-mers that are seen (strictly) less than X times in the dataset are filtered out.
 	   
 	   optional parameters:   
-	   -f			     Fast compression mode (with smaller compression ratio).
+	   -f		     Fast compression mode (with smaller compression ratio).
 	   -h                Print this Help.
 	   -v                Validate the output, check that all the distinct k-mers in the input file appears exactly once in compressed file.
 	   -V                Print software version and exit.
