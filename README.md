@@ -5,7 +5,7 @@ A tool to compress a set of k-mers represented in a file with FASTA/FASTQ format
 
 ## Requirements
 
-- Linux/unix operating system
+- Linux operating system
 
 - Git  
 
