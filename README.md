@@ -11,7 +11,7 @@ A tool to compress a set of k-mers represented in a file with FASTA/FASTQ format
 
 ### Steps
 
-1. Download the latest Linux 64-bit [binaries](https://github.com/medvedevgroup/ESSCompress/releases/download/2.0/essCompress-v2.0-linux-64.zip) (zipped). `wget https://github.com/medvedevgroup/ESSCompress/releases/download/2.0/essCompress-v2.0-linux-64.zip`
+1. Download the latest Linux 64-bit [binaries](https://github.com/medvedevgroup/ESSCompress/releases/download/v2.0/essCompress-v2.0-linux-64.zip) (zipped). `wget https://github.com/medvedevgroup/ESSCompress/releases/download/v2.0/essCompress-v2.0-linux-64.zip`
 
 2. Unzip.   
 `unzip essCompress-v2.0-linux-64.zip`
