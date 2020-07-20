@@ -1,4 +1,5 @@
 #!/bin/bash
+DDEBUG=1
 
 function abspath {
     if [[ -d "$1" ]]
@@ -27,14 +28,14 @@ Help()
    echo "-i [filepath]     Input file (include full path)"
    echo "-k [INT]          k-mer size"
    echo "optional arguments:"
-   echo "-a [INT]          min-abundance (default 1)"
-   echo "-f                fast compression mode"
-   # echo "-m [0|1|2]        compression mode (default:0); 0=ess(high compression), 1=ess-tip(low memory compression), 2=no compression (plain spss)"
-   #echo "-t [0|1]          Specify input type (default 1): 0=fasta/fastq file, 1=cdbG by bcalm"
+   echo "-a [INT]          min-abundance (default 1). Sets a threshold X, such that k-mers that appear less than X times in the dataset are filtered out. "
+   echo "-f                fast compression mode (uses less memory, but achieves slightly lower compression ratio)"
+   #echo "-s                output only spectrum-preserving string set with no compression"
    echo "-h                Print this Help."
    echo "-V                Print software version and exit."
    echo
-   # echo "-g                Print the GPL license notification."
+   # echo "-m [0|1|2]        compression mode (default:0); 0=ess(high compression), 1=ess-tip(low memory compression), 2=no compression (plain spss)"
+   #echo "-t [0|1]          Specify input type (default 1): 0=fasta/fastq file, 1=cdbG by bcalm"
 }
   
 
@@ -64,27 +65,30 @@ validate(){
    
    
    cmp sorted_unitigs.txt sorted_spss.txt && echo '### SUCCESS: Files Are Identical! ###' || echo '### WARNING: Files Are Different! ###'
-   rm -rf sorted_spss.txt spss.txt unitigs.txt unitigs.h5 spss.h5
-   rm -rf sorted_unitigs.txt
+
+   if [[ DDEBUG -eq 0 ]];  then
+    rm -rf sorted_spss.txt spss.txt unitigs.txt unitigs.h5 spss.h5
+    rm -rf sorted_unitigs.txt
+   fi
+   
 }
 
 ################################################################################
 # Function to compute k-mers (DSK) and cdbg (bcalm2)
 ################################################################################
 essCompress_prior(){
+   #assume we are in the correct directory
    L=$1
    K=$2
    A=$3
    TYPE=$4
-   O=$5
+
    KMERS_FA=kmers.fa
 
    L=$(abspath $L)
-   O=$(dirname $L) 
-   
-   cd $O
-   mkdir -p tmp_ess
-   cd tmp_ess
+   # cd $O
+   # mkdir -p tmp_ess
+   # cd tmp_ess
 
    ## get unitigs
    echo "Running BCALM2 to get compacted de Bruijn graph..."
@@ -108,7 +112,8 @@ essCompress_main(){
    K=$2
    A=$3
    TYPE=$4
-   O=$5
+   O=$5 #output directory and name specified
+
    STREXT=".essc"
    STREXTD=".essd"
 
@@ -120,8 +125,7 @@ essCompress_main(){
    KMERS_FA=$L
 
 
-
-   cd $O2
+   cd $O2  #this is inside tmp_ess/
    #mkdir -p tmp_ess
    #cd tmp_ess
 
@@ -180,7 +184,10 @@ essCompress_main(){
    #cd $O
    cd $O2
    cd ../
-   rm -rf tmp_ess
+
+   if [[ DDEBUG -eq 0 ]];  then
+    rm -rf tmp_ess
+   fi
 
 }
 
@@ -226,7 +233,7 @@ MODE=0
 # Process the input options. Add options as needed.                            #
 ################################################################################
 # Get the options
-while getopts "vhfVk:i:a:" option; do
+while getopts "vhfVk:i:a:o:" option; do
    case $option in
       h) # display Help
          Help
@@ -271,11 +278,9 @@ while getopts "vhfVk:i:a:" option; do
             exit 2
          fi
          ;;
-         #exit;;
       # o) OUTDIR=${OPTARG}
       #    outdirset=1
       #    ;;
-      #    #exit;;
      \?) # incorrect option
          echo "Error: Invalid option,  Use -h for help."
          exit;;
@@ -305,22 +310,32 @@ fi
 # fi
 
 #export PATH="/home/aur1111/s/absorb/v2.0/bin:$PATH"; source ~/.bashrc
-OUTDIR=""
-fastaORcdbgset=0
+
+
+#OUTDIR=""
+fastaORcdbg=0
 if [[ fastaORcdbg -eq 0 ]]; then
     
-    ABSPA=$(abspath $INPUTFILE)
-    DIRR=$(dirname $ABSPA)
-    OUTDIR=$(dirname $ABSPA)
-    OUTDIR="$OUTDIR/$(basename "$ABSPA")"
-    essCompress_prior $ABSPA $K $A $MODE $OUTDIR
-    essCompress_main $DIRR/tmp_ess/kmers.unitigs.fa $K $A $MODE $OUTDIR
+    input_abspa=$(abspath $INPUTFILE)  #absolute path: (i.e. /s/rhodo/list_reads)
+    input_directory=$(dirname $input_abspa) #get the directory of input file (i.e. /s/rhodo/)
+    
+    if [[ outdirset -eq 0 ]]; then
+      OUTDIR=$(dirname $input_abspa) #set the output directory same as that of input file (i.e. /s/rhodo/)
+    fi
+
+   cd $OUTDIR
+   mkdir -p tmp_ess
+   cd tmp_ess
+
+   essCompress_prior $input_abspa $K $A $MODE 
+   essCompress_main $input_directory/tmp_ess/kmers.unitigs.fa $K $A $MODE "$OUTDIR/$(basename "$input_abspa")"
     
 fi
 
-if [[ fastaORcdbg -eq 1 ]]; then
-   ABSPA=$(abspath $INPUTFILE)
-   DIRR=$(dirname $ABSPA)
-   essCompress_main $ABSPA $K $A $MODE $OUTDIR
-   failureMessage ESS
-fi
+# if [[ fastaORcdbg -eq 1 ]]; then
+#    input_abspa=$(abspath $INPUTFILE)
+#    input_directory=$(dirname $input_abspa)
+#    OUTDIR=$(dirname $input_abspa)
+#    OUTDIR="$OUTDIR/$(basename "$input_abspa")"
+#    essCompress_main $input_abspa $K $A $MODE $OUTDIR
+# fi

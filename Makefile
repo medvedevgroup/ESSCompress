@@ -1,17 +1,19 @@
 CC=g++
-CFLAGS=-w -std=c++11 -O3
+CFLAGS= -w -std=c++11 -O3 
+#-w
+#enable -DDEBUGMODE for debugging
 
-all: make_directories essCompress essDecompress
+all: make_directories essC essD
 
-essCompress: 
-	$(CC) $(CFLAGS) -o bin/essCompress src/ess.cpp
+essC:
+	$(CC) $(CFLAGS) -o bin/essC src/ess.cpp
 
-essDecompress: 
-	$(CC) $(CFLAGS) -o bin/essDecompress src/decoder.cpp
+essD:
+	$(CC) $(CFLAGS) -o bin/essD src/decoder.cpp
 
 .PHONY: make_directories
-make_directories: 
+make_directories:
 	mkdir -p bin/
 
 clean:
-	rm -f *.o bin/essDecompress bin/essCompress
+	rm -f *.o bin/essD bin/essC
