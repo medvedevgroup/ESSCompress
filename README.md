@@ -136,6 +136,7 @@ Output: a fasta file containing spectrum-preserving string set represented by th
 Download source and install:
 
        git clone https://github.com/medvedevgroup/ESSCompress
+       cd ESSCompress
        sh INSTALL
 
 Upon successful execution of this script, you will see linux binaries for [BCALM](https://github.com/GATB/bcalm) (`bcalmESS`), [DSK](https://github.com/GATB/dsk) (`dskESS` and `dsk2asciiESS`) and [MFCompress](http://bioinformatics.ua.pt/software/mfcompress/) (`mfcESS` and `mfcdESS`) in the `bin` folder, along with `validateSameKmer`, `essCompress` and `essDecompress`.
