@@ -21,9 +21,11 @@ public:
 //    string APP_PATH_DSK2ASCII="bin/dsk2ascii";
 //    string APP_PATH_BCALM="bin/bcalm";
     
-    string DSK_PATH="/Volumes/exFAT/work/dsk-v2.3.0-bin-Darwin/bin/";
+   // string DSK_PATH="/Volumes/exFAT/work/dsk-v2.3.0-bin-Darwin/bin/";
     //string DSK_PATH="/home/aur1111/w/dsk/build/bin";
     ///home/aur1111/w/dsk/build/bin
+
+    string DSK_PATH = "";
     string UNITIG_FILE;
     string OUTPUT_FILENAME;
     
@@ -53,6 +55,6 @@ public:
     //bool VALIDATE = true;
     
     /*FILENAMES*/
-    string ofileTipOutput = "fa.ess";
+    string ofileTipOutput = "kmers.ess";
 };
 #endif /* param_h */

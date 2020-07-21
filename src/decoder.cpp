@@ -79,6 +79,8 @@ void parseHeader(string pathname, int &K, int& MODE){
 }
 
 int main(int argc, char** argv) {
+    DDEBUG = 0;
+    //if(DDEBUG) cout<<"----------------RUNNING IN DEBUG MODE--------------------"<<endl;
     /*
     const char* nvalue = "" ;
     int K=0;
@@ -154,11 +156,11 @@ int main(int argc, char** argv) {
     if(tip_mode){
         decodeTip(K, pathname, outputFilename+"esstip.spss");
         cout<<"ESS-Tip-Compress decoding done!"<<endl;
-        cout<<"Output SPSS is in file \""<<outputFilename+"esstip.spss"<<"\""<<endl;
+        //cout<<"Output SPSS is in file \""<<outputFilename+"esstip.spss"<<"\""<<endl;
     }else{
         decodeOneAbsorb(K, pathname, outputFilename+"ess.spss");
         cout<<"ESS-Compress decoding done!"<<endl;
-        cout<<"Output SPSS is in file \""<<outputFilename+"ess.spss"<<"\""<<endl;
+        //cout<<"Output SPSS is in file \""<<outputFilename+"ess.spss"<<"\""<<endl;
     }
 
 

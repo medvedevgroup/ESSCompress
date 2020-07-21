@@ -81,6 +81,7 @@ void UST::run(string graph_file_name, int K, bool runFlag){
     //initialization phase
     //param.OUTPUT_FILENAME = getFileName(param.UNITIG_FILE)+".ust";
     param.OUTPUT_FILENAME = "kmers.ust.spss";
+    //param.OUTPUT_FILENAME = param.UNITIG_FILE+".essd";
     
 //    globalStatFile.open(("stat_ust_"+getFileName(param.UNITIG_FILE).substr(0, getFileName(param.UNITIG_FILE).length()-11)+".txt").c_str(), std::fstream::out);
     globalStatFile.open("stat_ust.txt", std::fstream::out);
@@ -91,6 +92,7 @@ void UST::run(string graph_file_name, int K, bool runFlag){
     sortStruct = new struct node_sorter[stat.V_bcalm];
     
     for (unitig_t i = 0; i < stat.V_bcalm; i++) {
+        nodeSign[i] = false;
         disSet.make_set(i);
         oldToNew[i].finalWalkId = -1;
         sortStruct[i].sortkey = 0;
@@ -136,14 +138,14 @@ void UST::run(string graph_file_name, int K, bool runFlag){
     
     if(param.VALIDATE){
         cout<<"## [4] Validating UST...\n";
-        system((param.DSK_PATH +"dsk -file "+param.UNITIG_FILE+" -kmer-size "+to_string(K)+" -abundance-min 1  -verbose 0").c_str());
-        system((param.DSK_PATH + "dsk -file absorbDecompressed.fa -kmer-size "+to_string(K)+" -abundance-min 1  -verbose 0").c_str());
-        system((param.DSK_PATH+"dsk2ascii -file list_reads.unitigs.h5 -out output-bcalm.txt  -verbose 0").c_str());
-        system((param.DSK_PATH + "dsk2ascii -file absorbDecompressed.h5 -out output-my.txt   -verbose 0").c_str());
+        if(system((param.DSK_PATH +"dsk -file "+param.UNITIG_FILE+" -kmer-size "+to_string(K)+" -out list_reads.unitigs.h5 -abundance-min 1  -verbose 0").c_str())!=0) exit(3);
+        if(system((param.DSK_PATH + "dsk -file absorbDecompressed.fa -kmer-size "+to_string(K)+" -abundance-min 1  -verbose 0").c_str())!=0) exit(3);
+        if(system((param.DSK_PATH+"dsk2ascii -file list_reads.unitigs.h5 -out output-bcalm.txt  -verbose 0").c_str())!=0) exit(3);
+        if(system((param.DSK_PATH + "dsk2ascii -file absorbDecompressed.h5 -out output-my.txt   -verbose 0").c_str())!=0) exit(3);
         //cout<<"doing highly  accurate validation................"<<endl;
-        system("sort -k 1 -n output-bcalm.txt -o a.txt; sort -k 1 -n output-my.txt -o b.txt");
-        system("cmp a.txt b.txt && echo '### SUCCESS: Files Are Identical! ###' || echo '### WARNING: Files Are Different! ###'");
-        system("rm -rf a.txt b.txt output-bcalm.txt output-my.txt list_reads.unitigs.h5 absorbDecompressed.h5");
+        if(system("sort -k 1 -n output-bcalm.txt -o a.txt; sort -k 1 -n output-my.txt -o b.txt")!=0) exit(3);
+        if(system("cmp a.txt b.txt && echo '### SUCCESS: Files Are Identical! ###' || echo '### WARNING: Files Are Different! ###'")!=0) exit(3);
+        if(system("rm -rf a.txt b.txt output-bcalm.txt output-my.txt list_reads.unitigs.h5 absorbDecompressed.h5")!=0) exit(3);
     }else{
         cout<<"## [4] Skipping output validation (please validate using validate.sh in scripts folder)\n";
     }
@@ -161,7 +163,8 @@ void UST::run(string graph_file_name, int K, bool runFlag){
     globalStatFile.close();
     
     cout << "---------------"<<endl;
-    cout << "------------ UST completed successfully. Output is in file "<<param.OUTPUT_FILENAME << " ------------"<<endl;
+    cout << "------------ UST completed successfully.----------------- " << endl;
+    //Output is in file "<<param.OUTPUT_FILENAME << " ------------"<<endl;
     cout<<"~~~"<<endl;
     cout << "Total number of unique "<<K<<"-mers " <<  " = " << stat.nKmers << endl;
     cout<<"~~~"<<endl;
@@ -208,11 +211,11 @@ void UST::readUnitigFile(const string& unitigFileName, vector<unitig_struct_t>& 
                 sscanf(line.c_str(), "%*c %d %s", &unitig_struct.serial, lnline);
                 
                 if(    line.find("ab:Z") == string::npos){
-                    cout<<"Incorrect input format. Try using flag -a 0."<<endl;
+                    cout<<"Incorrect input format. Check that input file matches the format of example cdbg."<<endl;
                     exit(3);
                 }
                 
-                sscanf(lnline, "%*5c %lld", &unitig_struct.ln);
+                sscanf(lnline, "%*5c %llu", &unitig_struct.ln);
                 
                 int abpos = line.find("ab") + 5;
                 int Lpos = line.find("L:");
@@ -245,7 +248,7 @@ void UST::readUnitigFile(const string& unitigFileName, vector<unitig_struct_t>& 
                 }
                 
                 //>0 LN:i:13 KC:i:12 km:f:1.3  L:-:0:- L:-:2:-  L:+:0:+ L:+:1:-
-                sscanf(lnline, "%*5c %d", &unitig_struct.ln);
+                sscanf(lnline, "%*5c %llu", &unitig_struct.ln);
                 
                 
                 if(unitig_struct.ln < smallestK){
@@ -628,18 +631,18 @@ void UST::ustOutputToDisk(vector<threetuple>& sorter){
     uidSequence.close();
     
     //keep the sequences only
-    system(("awk '!(NR%2)' "+param.UNITIG_FILE+" > seq.usttemp").c_str());
-    system("sort -n -k 2 -o uidSeq.usttemp uidSeq.usttemp");
+    if(system(("awk '!(NR%2)' "+param.UNITIG_FILE+" > seq.usttemp").c_str())!=0) exit(3);
+    if(system("sort -n -k 2 -o uidSeq.usttemp uidSeq.usttemp")!=0) exit(3);
     if(FLG_ABUNDANCE){
-        system(("awk '(NR%2)' "+param.UNITIG_FILE+" | cut -f 5 -d ':' | cut -f 1 -d 'L' > count.usttemp").c_str()); // get a separate count file
-        system("paste -d' ' uidSeq.usttemp seq.usttemp count.usttemp > merged.usttemp ");
-        system("sort -n -k 1 -o merged.usttemp merged.usttemp");
-        system(("cat  merged.usttemp  | awk '{for (i=4;i<=NF;i+=1) print $i}' > "+getFileName(param.UNITIG_FILE)+".ust.counts").c_str());
+        if(system(("awk '(NR%2)' "+param.UNITIG_FILE+" | cut -f 5 -d ':' | cut -f 1 -d 'L' > count.usttemp").c_str())!=0) exit(3); // get a separate count file
+        if(system("paste -d' ' uidSeq.usttemp seq.usttemp count.usttemp > merged.usttemp ")!=0) exit(3);
+        if(system("sort -n -k 1 -o merged.usttemp merged.usttemp")!=0) exit(3);
+        if(system(("cat  merged.usttemp  | awk '{for (i=4;i<=NF;i+=1) print $i}' > "+getFileName(param.UNITIG_FILE)+".ust.counts").c_str())!=0) exit(3);
     }else{
-        system("paste -d' ' uidSeq.usttemp seq.usttemp > merged.usttemp ");
-        system("sort -n -k 1 -o merged.usttemp merged.usttemp");
+        if(system("paste -d' ' uidSeq.usttemp seq.usttemp > merged.usttemp ")!=0) exit(3);
+        if(system("sort -n -k 1 -o merged.usttemp merged.usttemp")!=0) exit(3);
     }
-    system("cat  merged.usttemp  | cut -d' ' -f3 >  seq.usttemp");
+    if(system("cat  merged.usttemp  | cut -d' ' -f3 >  seq.usttemp")!=0) exit(3);
     
     
     ifstream sequenceStringFile ("seq.usttemp");
@@ -692,8 +695,8 @@ void UST::ustOutputToDisk(vector<threetuple>& sorter){
     
     sequenceStringFile.close();
     //smallKFile.close();
-    system("rm -rf *.usttemp");
-    system("rm -rf uidSeq.txt");
+    if(system("rm -rf *.usttemp")!=0) exit(3);
+    if(system("rm -rf uidSeq.txt")!=0) exit(3);
     
     // UST (TWOWAYEXT) DONE!
     //delete []  global_issinksource;

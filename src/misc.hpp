@@ -1,16 +1,9 @@
-//
-//  misc.h
-//  UST
-//
-//  Created by Amatur Rahman on 21/5/20.
-//  Copyright © 2020 medvedevgroup. All rights reserved.
-//
+//  Last modified by Amatur Rahman on 19/7/20.
 
 #include <assert.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <cmath>
-#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -27,11 +20,22 @@
 #include <queue>
 #include <deque>
 #include <tuple>
+#include <cstring>
+#include <string>
 
 #ifndef misc_h
 #define misc_h
-#include<string>
+
 using namespace std;
+
+
+#ifdef DEBUGMODE
+	int DDEBUG=1;
+#else
+	int DDEBUG=0;
+#endif
+//int DDEBUG = 1;
+
 
 #ifndef NDEBUG
 #   define ASSERT(condition, message) \
@@ -53,8 +57,6 @@ double readTimer() {
 }
 
 string getFileName(const string& s) {
-    return "kmers";
-    
     char sep = '/';
     
     size_t i = s.rfind(sep, s.length());
@@ -65,16 +67,25 @@ string getFileName(const string& s) {
     return("");
 }
 
+// string getParentPath(string str){   
+//     char * lastSlash = strrchr( str, '/');
+//     if ( *lastSlash != '\n') *(lastSlash +1) = '\n';
+//     string s(lastSlash);
+//     return s;
+// }
+
 string delSpaces(string &str) {
     str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
     return str;
 }
 
+/**
 int equal_files(){
     int result = system("diff /Users/Sherlock/Documents/bcl/bcl/a.txt /Users/Sherlock/Documents/bcl/bcl/output-my.txt >nul 2>nul");
     //They are different if result != 0
     return result;
 }
+**/
 
 
 inline string currentDateTime() {
@@ -108,6 +119,5 @@ inline string plus_strings(const string& a, const string& b, size_t kmersize) {
     string ret = a + b.substr(kmersize - 1, b.length() - (kmersize - 1));
     return ret;
 }
-
 
 #endif /* misc_h */

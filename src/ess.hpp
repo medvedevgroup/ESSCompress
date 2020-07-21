@@ -142,11 +142,11 @@ void ESS::readUnitigFile(const string& unitigFileName, vector<unitig_struct_t>& 
                     sscanf(line.c_str(), "%*c %d %s", &unitig_struct.serial, lnline);
                     
                     if(    line.find("ab:Z") == string::npos){
-                        cout<<"Incorrect input format. Try using flag -a 0."<<endl;
+                        cout<<"Incorrect input format. Check that input file matches the format of example cdbg."<<endl;
                         exit(3);
                     }
                     
-                    sscanf(lnline, "%*5c %d", &unitig_struct.ln);
+                    sscanf(lnline, "%*5c %llu", &unitig_struct.ln);
                     
                     int abpos = line.find("ab") + 5;
                     int Lpos = line.find("L:");
@@ -174,12 +174,12 @@ void ESS::readUnitigFile(const string& unitigFileName, vector<unitig_struct_t>& 
                     sscanf(line.c_str(), "%*c %d %s  %s  %s %[^\n]s", &unitig_struct.serial, lnline, kcline, kmline, edgesline);
                     
                     if(    line.find("KC") == string::npos){
-                        cout<<"Incorrect input format. Try using flag -a 1."<<endl;
+                        cout<<"Incorrect input format. Check that input file matches the format of example cdbg."<<endl;
                         exit(3);
                     }
                     
                     //>0 LN:i:13 KC:i:12 km:f:1.3  L:-:0:- L:-:2:-  L:+:0:+ L:+:1:-
-                    sscanf(lnline, "%*5c %d", &unitig_struct.ln);
+                    sscanf(lnline, "%*5c %llu", &unitig_struct.ln);
                     
                     
                     if(unitig_struct.ln < smallestK){
@@ -237,11 +237,11 @@ void ESS::readUnitigFile(const string& unitigFileName, vector<unitig_struct_t>& 
     }
     
     
-    if(smallestK > K ){
-        cout<<"\n :::: :::: :::: :::: !!!!!!!!! WARNING !!!!!!!!!!! :::: :::: :::: ::::"<<endl;
-        cout<<"The length of the smallest string we found was " << smallestK << ". Please make sure you are using the correct value of 'k' to ensure correctness of output."<<endl;
-        cout << "------------------------------------------------------"<<endl;
-    }
+    // if(smallestK > K ){
+    //     cout<<"\n :::: :::: :::: :::: !!!!!!!!! WARNING !!!!!!!!!!! :::: :::: :::: ::::"<<endl;
+    //     cout<<"The length of the smallest string we found was " << smallestK << ". Please make sure you are using the correct value of 'k' to ensure correctness of output."<<endl;
+    //     cout << "------------------------------------------------------"<<endl;
+    // }
     
     param.UNITIG_FILE = unitigFileName;
     //cout << "Complete reading input unitig file (bcalm2 file)." << endl;
@@ -262,7 +262,7 @@ vector<ESS::threetuple> ESS::sorterMaker() {
         saturated[i] = false;
     }
     
-    cout<<"Basic V loop time: "<<readTimer() - time_a<<" sec"<<endl;
+    //cout<<"Basic V loop time: "<<readTimer() - time_a<<" sec"<<endl;
     time_a = readTimer();
     
     for (unitig_t j = 0; j < V_bcalm; j++) {
@@ -418,7 +418,7 @@ vector<ESS::threetuple> ESS::sorterMaker() {
     delete [] color;
     delete [] p_dfs;
     delete [] saturated;
-    cout<<"DFS time: "<<readTimer() - time_a<<" sec"<<endl;
+    cout<<"Done. DFS time: "<<readTimer() - time_a<<" sec"<<endl;
     
     
     /***MERGE START***/
@@ -628,27 +628,28 @@ public:
 
 void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
     
-    cout<<"ESS-Compress v2.0"<<endl;
-    cout<<"--------------------"<<endl;
+    cout<<"Running ESS-Compress v2.0"<<endl;
+    cout<<"-------------------------"<<endl;
     
     this->K = K;
     param.UNITIG_FILE = graph_file_name;
     //collectInput(argc, argv, graph_file_name, K, FLG_ABUNDANCE); //input: argc, argv
     
-    cout<<"--------------------"<<endl;
-    cout << "## Please wait while we read input file.... " << graph_file_name << ": k = "<<K<<endl;
+    //cout<<"--------------------"<<endl;
+    cout << "[1] Input file is being loaded.... " << graph_file_name << ": k = "<<K<<endl;
     cout<<".........................."<<endl;
     double startTime = readTimer();
     
     this->readUnitigFile(param.UNITIG_FILE, unitigs, adjList); //input: graph_filename, output: last 2
     
     double TIME_READ_SEC = readTimer() - startTime;
-    cout<<".........................."<<endl;
+    //cout<<".........................."<<endl;
     cout<<"Done. TIME to read file "<<TIME_READ_SEC<<" sec."<<endl;
     cout<<"--------------------"<<endl;
     
     //initialization phase
     //param.OUTPUT_FILENAME = getFileName(param.UNITIG_FILE)+".ess";
+    //param.OUTPUT_FILENAME = param.UNITIG_FILE+".essc";
     param.OUTPUT_FILENAME = "kmers.ess";
     
 //    globalStatFile.open(("stat_ess_"+getFileName(param.UNITIG_FILE).substr(0, getFileName(param.UNITIG_FILE).length()-11)+".txt").c_str(), std::fstream::out);
@@ -661,6 +662,7 @@ void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
     sortStruct = new struct node_sorter[V_bcalm];
     
     for (unitig_t i = 0; i < V_bcalm; i++) {
+        nodeSign[i] = false;
         disSet.make_set(i);
         oldToNew[i].finalWalkId = -1;
         sortStruct[i].sortkey = 0;
@@ -695,7 +697,7 @@ void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
     //##################################################//
     
     //DFS
-    cout<<"## Please wait while DFS step is going on... "<<endl;
+    cout<<"[2] DFS algorithm for stitching unitigs is running... "<<endl;
     sorter = this->sorterMaker();
     
     double time_a = readTimer();
@@ -705,23 +707,23 @@ void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
     }
     
     
-    cout<<"## Starting absorption module... "<<endl;
+    cout<<"[3] Starting absorption module... "<<endl;
     this->absorptionManager();
     
     
-    cout<<"Done. TIME to output: "<<readTimer() - time_a<<" sec."<<endl;
+    cout<<"TIME to output: "<<readTimer() - time_a<<" sec."<<endl;
     double TIME_TOTAL_SEC = readTimer() - startTime;
     
     
     
    
     
-    system(("cat "+param.OUTPUT_FILENAME+ "| grep -v \">\" | wc | awk '{print $3-$1}' > tmp.txt").c_str());
+    if(system(("cat "+param.OUTPUT_FILENAME+ "| grep -v \">\" | wc | awk '{print $3-$1}' > tmp.txt").c_str())!=0)  exit(3);
     ifstream tmpfile;
     tmpfile.open("tmp.txt");
     tmpfile >> stat.C_ess;
     tmpfile.close();
-    system("rm -rf tmp.txt");
+    if(system("rm -rf tmp.txt")!=0) exit(3);
 
     stat.statPrinter(globalStatFile, "C_ESS", stat.C_ess);
     stat.statPrinter(globalStatFile, "V_UST", stat.V_ess);
@@ -729,15 +731,16 @@ void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
     stat.statPrinter(globalStatFile, "C_UST", stat.C_ess);
     stat.statPrinter(globalStatFile, "CHAR_PER_KMER_ESS", stat.C_ess*1.0/stat.nKmers);
 
-    stat.statPrinter(globalStatFile, "TIME_TOTAL_SEC", TIME_TOTAL_SEC, true);
-    
+    stat.statPrinter(globalStatFile, "TIME_TOTAL_SEC", TIME_TOTAL_SEC, false);
+    cout<<"Total time for ESS-Compress core: "<<TIME_TOTAL_SEC<<endl;
+
     uint64_t maxulen = maximumUnitigLength();
     stat.statPrinter(globalStatFile, "MAX_UNITIG_LEN_MB", maxulen*1.0/1024.0/1024.0);
     stat.statPrinter(globalStatFile, "E_MB", stat.E_bcalm*8.0/1024.0/1024.0);
     stat.statPrinter(globalStatFile, "V_MB", stat.V_bcalm*8.0/1024.0/1024.0);
     
     
-    cout << "------------ ESS-Compress completed successfully. Output is in file "<<param.OUTPUT_FILENAME << " ------------"<<endl;
+    cout << "------------ End of ESS-Compress (core) : Success" << " ------------"<<endl;
     cout << "Total number of unique "<<K<<"-mers " <<  "= " << stat.nKmers << endl;
     cout << "Size of ESS representation = "<< stat.C_ess*1.0/stat.nKmers <<" char/k-mer" << endl;
     cout << "------------------------------------------------------"<<endl;
@@ -754,14 +757,14 @@ void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
         
         //validate();
         cout<<"## [5] Validating decoded ESS...\n";
-        system((param.DSK_PATH +"dsk -file "+param.UNITIG_FILE+" -kmer-size "+to_string(K)+" -abundance-min 1  -verbose 0").c_str());
-        system((param.DSK_PATH + "dsk -file absorbDecompressed.fa -kmer-size "+to_string(K)+" -abundance-min 1  -verbose 0").c_str());
-        system((param.DSK_PATH+"dsk2ascii -file list_reads.unitigs.h5 -out output-bcalm.txt  -verbose 0").c_str());
-        system((param.DSK_PATH + "dsk2ascii -file absorbDecompressed.h5 -out output-my.txt   -verbose 0").c_str());
+        if(system((param.DSK_PATH +"dsk -file "+param.UNITIG_FILE+" -kmer-size "+to_string(K)+" -abundance-min 1 -out list_reads.unitigs.h5 -verbose 0").c_str())!=0) exit(3);
+        if(system((param.DSK_PATH + "dsk -file absorbDecompressed.fa -kmer-size "+to_string(K)+" -abundance-min 1  -verbose 0").c_str())!=0) exit(3);
+        if(system((param.DSK_PATH+"dsk2ascii -file list_reads.unitigs.h5 -out output-bcalm.txt  -verbose 0").c_str())!=0) exit(3);
+        if(system((param.DSK_PATH + "dsk2ascii -file absorbDecompressed.h5 -out output-my.txt   -verbose 0").c_str())!=0) exit(3);
         //cout<<"doing highly  accurate validation................"<<endl;
-        system("sort -k 1 -n output-bcalm.txt -o a.txt; sort -k 1 -n output-my.txt -o b.txt");
-        system("cmp a.txt b.txt && echo '### SUCCESS: Files Are Identical! ###' || echo '### WARNING: Files Are Different! ###'");
-        system("rm -rf a.txt b.txt output-bcalm.txt output-my.txt list_reads.unitigs.h5 absorbDecompressed.h5");
+        if(system("sort -k 1 -n output-bcalm.txt -o a.txt; sort -k 1 -n output-my.txt -o b.txt")!=0) exit(3);
+        if(system("cmp a.txt b.txt && echo '### SUCCESS: Files Are Identical! ###' || echo '### WARNING: Files Are Different! ###'")!=0) exit(3);
+        if(system("rm -rf a.txt b.txt output-bcalm.txt output-my.txt list_reads.unitigs.h5 absorbDecompressed.h5")!=0) exit(3);
     }
     
     globalStatFile.close();
@@ -917,6 +920,15 @@ bool AbsorbGraph::isItWalkStarting(unitig_t uid){
 
 
 void AbsorbGraph::sorterIndexAndAbsorbGraphMaker(){
+    if(DDEBUG==2){
+        for(int i =0 ; i<sorter.size(); i++){
+            int tup_i = i+1;
+            unitig_t prev_uid = get<0>(sorter[tup_i - 1]);
+            unitig_t prev_wid = get<1>(sorter[tup_i - 1]);
+            unitig_t prev_pos = get<2>(sorter[tup_i - 1]);
+            cout<<prev_uid<<" "<<prev_wid<<" "<<prev_pos<<endl;
+        }
+    }
     
     unitig_t prevWalkId = -1;
     unitig_t lastWalkStartingIndex = -1;
@@ -979,10 +991,8 @@ void AbsorbGraph::sorterIndexAndAbsorbGraphMaker(){
                     bool is3 =(enew.left != nodeSign[e.toNode] && enew.right != nodeSign[enew.toNode] );
                     bool is2 =(enew.left == nodeSign[e.toNode] && enew.right != nodeSign[enew.toNode] );
                     // || is1 || is2  || (unitigs.at(e.toNode).sequence.length() >= 2*(K-1))
-                    if(!isItWalkStarting(e.toNode) || is1 || is2  || (unitigs.at(e.toNode).ln >= 2*(K-1))) {
-                        //|| (unitigs.at(e.toNode).sequence.length() >= 2*(K-1))
-                        //  or (is1 && unitigs.at(uid).sequence.length() > 2*(K-1)) or (is2 && unitigs.at(uid).sequence.length() > 2*(K-1))
-                        //|| is1 || is2
+                    if(!isItWalkStarting(e.toNode) || is1 || is2 || (unitigs.at(e.toNode).ln >= 2*(K-1))) {
+                         //|| is1 || is2
                          if( is1 || is2 || is3 || is4){
                         //if( ((is1 or is4) or (!ABSORBONLYTWO)) ){
                             absorbGraph[e.toNode].push_back(enew);
@@ -1045,7 +1055,7 @@ vector<unitig_t> AbsorbGraph::getAllUidsInWalk(unitig_t walkId){  //not  tested
 
 void SCCGraph::findTarjanSCC(unitig_t& countSCC, map<unitig_t, unitig_t>& vToMetagraphV, vector<bool>& obsoleteWalkId, map<unitig_t, set<unitig_t> >& sccIdToWalks) //Tarjan's algorithm, iterative version.
 {
-    cout<<"Running tarjan's iterative SCC"<<endl;
+    //cout<<"Running tarjan's iterative SCC algorithm...";
     unitig_t next = 0; // # Next index.
     unitig_t N = V;
     unitig_t NIL = -1;
@@ -1158,7 +1168,7 @@ void AbsorbGraph::removeCycleFromAbsorbGraph()
 
     bool SCCORDER = true;
     if(SCCORDER){
-        cout<<"scc: "<<endl;
+        //cout<<"scc: "<<endl;
         queue<unitig_t> topoorder = printSCCs();
         while(!topoorder.empty()){
             unitig_t jj =topoorder.front();
@@ -1168,7 +1178,7 @@ void AbsorbGraph::removeCycleFromAbsorbGraph()
     }
 
     delete g;
-    cout<<"[3.3.0] SCC done."<<endl;
+    
 
     while(!dq.empty()){
         unitig_t qtop = dq.front();
@@ -1268,6 +1278,18 @@ void AbsorbGraph::printFormattedPattern(unitig_t uid, char preOrSuf, ofstream &F
 //        FOUT<<(preOrSuf);
 //    }
     FOUT<<(preOrSuf);
+
+
+    if(DDEBUG){
+        std::ofstream debugFile;
+
+        debugFile.open("debug.txt", std::ios_base::app); // append instead of overwrite
+        if(uid!=-1){
+            debugFile << uid;
+        }
+        debugFile<<(preOrSuf);
+        debugFile.close();
+    }
 }
 
 void AbsorbGraph::splitToFourPartNodeSign(){
@@ -1303,11 +1325,16 @@ void AbsorbGraph::splitToFourPartNodeSign(){
     if(system("sort -t' ' -k1b,1 -o sixColFile.sorted sixColFile.txt")  != 0) exit(3);
     
     //sort the prefix file
-    if(system("awk \'{print $0 \" \" NR-1}\' preNumFile.txt | sort -t' ' -k1b,1 -o preNumFile.sorted; join -t' ' -o 0,1.2,2.2 preNumFile.sorted sixColFile.sorted | sort -t' ' -n -k2 -o preNumFile.txt; cut -d' ' -f3 preNumFile.txt > preNumFile.sorted; rm -rf preNumFile.txt") != 0) exit(3);
-    //system("join -o 0,1.2,2.2 cutpreNumFile.sorted sixColFile.txt | sort -t' ' -n -k2 -o cutpreNumFile.txt"); //debug
+    if(system("awk \'{print $0 \" \" NR-1}\' preNumFile.txt | sort -t' ' -k1b,1 -o preNumFile.sorted; join -t' ' -o 0,1.2,2.2 preNumFile.sorted sixColFile.sorted | sort -t' ' -n -k2 -o preNumFile.txt; cut -d' ' -f3 preNumFile.txt > preNumFile.sorted") != 0) exit(3);
+    if(true){
+        if(system("rm -rf preNumFile.txt") != 0) exit(3);
+    }
     
-    if(system("awk \'{print $0 \" \" NR-1}\' cutpreNumFile.txt | sort -t' ' -k1b,1 -o cutpreNumFile.sorted; join -t' ' -o 0,1.2,2.3 cutpreNumFile.sorted sixColFile.sorted | sort -t' ' -n -k2 -o cutpreNumFile.txt; cut -d' ' -f3 cutpreNumFile.txt > cutpreNumFile.sorted ; rm -rf cutpreNumFile.txt") != 0) exit(3);
-    
+    if(system("awk \'{print $0 \" \" NR-1}\' cutpreNumFile.txt | sort -t' ' -k1b,1 -o cutpreNumFile.sorted; join -t' ' -o 0,1.2,2.3 cutpreNumFile.sorted sixColFile.sorted | sort -t' ' -n -k2 -o cutpreNumFile.txt; cut -d' ' -f3 cutpreNumFile.txt > cutpreNumFile.sorted") != 0) exit(3);
+    if(true){
+        if(system("rm -rf cutpreNumFile.txt") != 0) exit(3);
+    }
+
     if(system("awk \'{print $0 \" \" NR-1}\' sufNumFile.txt | sort -t' ' -k1b,1 -o sufNumFile.sorted; join -t' ' -o 0,1.2,2.4 sufNumFile.sorted sixColFile.sorted | sort -t' ' -n -k2 -o sufNumFile.txt; cut -d' ' -f3 sufNumFile.txt > sufNumFile.sorted; rm -rf sufNumFile.txt") != 0) exit(3);
     
     if(system("awk \'{print $0 \" \" NR-1}\' cutsufNumFile.txt | sort -t' ' -k1b,1 -o cutsufNumFile.sorted; join  -t' ' -o 0,1.2,2.5 cutsufNumFile.sorted sixColFile.sorted | sort -t' ' -n -k2 -o cutsufNumFile.txt; cut -d' ' -f3 cutsufNumFile.txt > cutsufNumFile.sorted; rm -rf cutsufNumFile.txt") != 0) exit(3);
@@ -1379,8 +1406,11 @@ void AbsorbGraph::splitToFourPartNodeSign(){
     if(system(cmdn.c_str())!=0) exit(3);
     
     
-    if(system("rm -rf cutpreNumFile.sorted cutsufNumFile.sorted intESSFile.txt final.ess preNumFile.sorted sixColFile.sorted sixColFile.txt sufNumFile.sorted xNumFile.sorted tmp/") != 0) exit(3);
-    
+    if(system("rm -rf cutpreNumFile.sorted cutsufNumFile.sorted intESSFile.txt final.ess preNumFile.sorted sufNumFile.sorted xNumFile.sorted") != 0) exit(3);
+    if(!DDEBUG) {
+        if(system("rm -rf tmp/  sixColFile.sorted sixColFile.txt ") != 0) exit(3);
+    }
+
 }
 
 
@@ -1638,6 +1668,12 @@ void AbsorbGraph::tipAbsorbedOutputter(){
 
     ofstream tipNoStrFile;
     tipNoStrFile.open("intESSFile.txt");
+
+    ofstream debugFile;
+    if(DDEBUG){
+        if(system("rm -rf debug.txt")!=0)  exit(3);
+        debugFile.open("debug.txt", std::ios_base::app); // append instead of overwrite
+    }
     vector<char> color(sorter.size(), 'w');
 
 //    for(int i = 0; i<countNewNode; i++){
@@ -1654,6 +1690,8 @@ void AbsorbGraph::tipAbsorbedOutputter(){
 
         //tipFile<<">\n";
         tipNoStrFile<<">\n";
+        if(DDEBUG) debugFile<<">\n";
+
         //iterSpellTested(it, depth, K, color, 0);
         unitig_t & startWalkIndex2 = it;
         iterSpellEfficient( startWalkIndex2,  color, tipNoStrFile);
@@ -1663,6 +1701,7 @@ void AbsorbGraph::tipAbsorbedOutputter(){
         stat.V_ess++;
         //tipFile<<"\n";
         tipNoStrFile<<"\n";
+        if(DDEBUG) debugFile<<"\n";
     }
 
 
@@ -1672,6 +1711,7 @@ void AbsorbGraph::tipAbsorbedOutputter(){
     cP.close();
     cx.close();
     tipNoStrFile.close();
+    if(DDEBUG) debugFile.close();
     //tipFile.close();
 
     splitToFourPartNodeSign();
@@ -1734,10 +1774,15 @@ void AbsorbGraph::absorptionManager() {
     /* start different steps of ESS*/
     sorterIndexAndAbsorbGraphMaker();//sorter, sorterIndexMap, absorbGraph, absorbedCategory
     //makeGraphDotAbsorb(absorbGraph);
+
+    cout<<"[4] Removing cycles from absorption graph (forest construction step)..."<<endl;
     removeCycleFromAbsorbGraph();//sorter,  sorterIndexMap, absorbGraph, absorbGraphCycleRemoved,  orderOfUnitigs,  absorbedCategory, last two are output
-    cout<<"[3.3] cycle removed from absorption graph (forest construction done!)"<<endl;
+    cout<<"Done!"<<endl;
+
+    cout<<"[5] Spelling paths and dumping them to disk...";
     tipAbsorbedOutputter(); //sorter, sorterIndexMap, absorbGraphCycleRemoved, orderOfUnitigs, absorbedCategory
-    cout<<"[3.4] path spelling done!"<<endl;
+    cout<<"Done!"<<endl;
+
 }
 
 SCCGraph::SCCGraph(unitig_t V)
@@ -1847,7 +1892,9 @@ queue<unitig_t> AbsorbGraph::printSCCs()
         //assert(uidorder.size() == V_bcalm);
 
         //cout<<"number of SCC: "<<countSCC<<endl;
-        cout<<"ESS number of strings "<<lowerbound<<endl;
+
+        //cout<<"... Done."<<endl;
+        cout<<"Number of strings in ESS-Compress representation: "<<lowerbound<<endl;
         stat.absorbGraphNumCC_endAbosrb = lowerbound;
         delete[] outdeg;
     }

@@ -1,6 +1,6 @@
 CC=g++
-CFLAGS= -w -std=c++11 -O3 
-#-w
+CFLAGS=-w -std=c++11 -O3 
+#-w suppresses warning
 #enable -DDEBUGMODE for debugging
 
 all: make_directories essC essD

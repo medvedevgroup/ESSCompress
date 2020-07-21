@@ -109,13 +109,13 @@ public:
         //system();
         
         //keep the sequences only
-        system(("awk '!(NR%2)' "+param.UNITIG_FILE+" > seq.usttemp").c_str());
-        system("sort -n -k 2 -o uidSeq.usttemp uidSeq.usttemp");
-        system("paste -d' ' uidSeq.usttemp seq.usttemp > merged.usttemp ");
-        system("mkdir -p tmpUSTdir");
-        system("sort -T tmpUSTdir/ -n -k 1 -o merged.usttemp merged.usttemp");
+        if(system(("awk '!(NR%2)' "+param.UNITIG_FILE+" > seq.usttemp").c_str())!=0) exit(3);
+        if(system("sort -n -k 2 -o uidSeq.usttemp uidSeq.usttemp")!=0) exit(3);
+        if(system("paste -d' ' uidSeq.usttemp seq.usttemp > merged.usttemp ")!=0) exit(3);
+        if(system("mkdir -p tmpUSTdir")!=0) exit(3);
+        if(system("sort -T tmpUSTdir/ -n -k 1 -o merged.usttemp merged.usttemp")!=0) exit(3);
         
-        system("cat  merged.usttemp  | cut -d' ' -f3 >  seq.usttemp");
+        if(system("cat  merged.usttemp  | cut -d' ' -f3 >  seq.usttemp")!=0) exit(3);
         
         
         //string walkString = "";
@@ -244,7 +244,7 @@ public:
         }
         //}
         
-        system("rm -rf tmpUSTdir *.usttemp");
+        if(system("rm -rf tmpUSTdir *.usttemp")!=0) exit(3);
         
         sequenceStringFile.close();
         tipFile.close();
@@ -272,7 +272,7 @@ public:
             saturated[i] = false;
         }
         
-        cout<<"Basic V loop time: "<<readTimer() - time_a<<" sec"<<endl;
+        //cout<<"Basic V loop time: "<<readTimer() - time_a<<" sec"<<endl;
         time_a = readTimer();
         
         
@@ -451,7 +451,7 @@ public:
         
         delete [] p_dfs;
         delete [] saturated;
-        cout<<"DFS time: "<<readTimer() - time_a<<" sec"<<endl;
+        cout<<"Done. DFS time: "<<readTimer() - time_a<<" sec"<<endl;
         
         
         /***MERGE START***/
@@ -784,11 +784,11 @@ public:
                         sscanf(line.c_str(), "%*c %d %s", &unitig_struct.serial, lnline);
                         
                         if(    line.find("ab:Z") == string::npos){
-                            cout<<"Incorrect input format. Try using flag -a 0."<<endl;
+                            cout<<"Incorrect input format. Check that input file matches the format of example cdbg."<<endl;
                             exit(3);
                         }
                         
-                        sscanf(lnline, "%*5c %d", &unitig_struct.ln);
+                        sscanf(lnline, "%*5c %llu", &unitig_struct.ln);
                         
                         int abpos = line.find("ab") + 5;
                         int Lpos = line.find("L:");
@@ -821,7 +821,7 @@ public:
                         }
                         
                         //>0 LN:i:13 KC:i:12 km:f:1.3  L:-:0:- L:-:2:-  L:+:0:+ L:+:1:-
-                        sscanf(lnline, "%*5c %d", &unitig_struct.ln);
+                        sscanf(lnline, "%*5c %llu", &unitig_struct.ln);
                         
                         
                         if(unitig_struct.ln < smallestK){
@@ -879,40 +879,41 @@ public:
         }
         
         
-        if(smallestK > K ){
-            cout<<"\n :::: :::: :::: :::: !!!!!!!!! WARNING !!!!!!!!!!! :::: :::: :::: ::::"<<endl;
-            cout<<"The length of the smallest string we found was " << smallestK << ". Please make sure you are using the correct value of 'k' to ensure correctness of output."<<endl;
-            cout << "------------------------------------------------------"<<endl;
-        }
+        // if(smallestK > K ){
+        //     cout<<"\n :::: :::: :::: :::: !!!!!!!!! WARNING !!!!!!!!!!! :::: :::: :::: ::::"<<endl;
+        //     cout<<"The length of the smallest string we found was " << smallestK << ". Please make sure you are using the correct value of 'k' to ensure correctness of output."<<endl;
+        //     cout << "------------------------------------------------------"<<endl;
+        // }
+
         //cout << "Complete reading input unitig file (bcalm2 file)." << endl;
     }
 
     
     void run(string graph_file_name, int K, bool runFlag = 0){
         //OVERRIDE
-        cout<<"------------------------------"<<endl;
-        cout<<"ESS-Compress v2.0 (TIP-mode)"<<endl;
-        cout<<"------------------------------"<<endl;
+        //cout<<"------------------------------"<<endl;
+        cout<<"Running ESS-Compress v2.0 (TIP-mode)"<<endl;
+        cout<<"------------------------------------"<<endl;
         
         this->K = K;
         param.UNITIG_FILE = graph_file_name;
         //collectInput(argc, argv, graph_file_name, K, FLG_ABUNDANCE); //input: argc, argv
         
-        cout<<"--------------------"<<endl;
-        cout << "## [1] Please wait while we read input file.... " << graph_file_name << ": k = "<<K<<endl;
+        //cout<<"--------------------"<<endl;
+        cout << "[1] Please wait input file is being loaded... " << graph_file_name << ": k = "<<K<<endl;
         cout<<".........................."<<endl;
         double startTime = readTimer();
         
         readUnitigFile(graph_file_name, unitigs, adjList); //input: graph_filename, output: last 2
         
         double TIME_READ_SEC = readTimer() - startTime;
-        cout<<".........................."<<endl;
+        //cout<<".........................."<<endl;
         cout<<"Done. TIME to read file "<<TIME_READ_SEC<<" sec."<<endl;
         cout<<"--------------------"<<endl;
         
         //initialization phase
-        //param.OUTPUT_FILENAME = getFileName(param.UNITIG_FILE)+".ust.fa";
         param.OUTPUT_FILENAME = "kmers.esstip";
+        //param.OUTPUT_FILENAME = param.UNITIG_FILE+".essc";
         
 //        globalStatFile.open(("stat_esstip_"+getFileName(param.UNITIG_FILE).substr(0, getFileName(param.UNITIG_FILE).length()-11)+".txt").c_str(), std::fstream::out);
         globalStatFile.open("stat_esstip.txt", std::fstream::out);
@@ -925,6 +926,7 @@ public:
         sortStruct = new struct node_sorter[V_bcalm];
         
         for (unitig_t i = 0; i < V_bcalm; i++) {
+            nodeSign[i] = false;
             disSet.make_set(i);
             oldToNew[i].finalWalkId = -1;
             sortStruct[i].sortkey = 0;
@@ -948,12 +950,12 @@ public:
         }
         
         
-        cout<<"--------------------"<<endl;
-        cout<<"## Please wait while number of dead-ends are being counted... "<<endl;
-        cout<<".........................."<<endl;
+        //cout<<"--------------------"<<endl;
+        cout<<"[2] Please wait while number of dead-ends are being counted... "<<endl;
+        //cout<<".........................."<<endl;
         double time_a = readTimer();
         degreePopulate();
-        cout<<".........................."<<endl;
+        //cout<<".........................."<<endl;
         cout<<"Done. TIME to count the nodes in unitig graph: "<<readTimer() - time_a<<" sec."<<endl;
         cout<<"--------------------"<<endl;
         
@@ -968,7 +970,7 @@ public:
          //##################################################//
          
          //DFS
-         cout<<"## [2] Please wait while DFS step is going on... "<<endl;
+         cout<<"[3] DFS algorithm for stitching unitigs is running... "<<endl;
          sorter = this->sorterMaker();
         
          
@@ -978,7 +980,7 @@ public:
              return;
          }
          
-         cout<<"## [3] Writing strings to file.... "<<endl;
+         cout<<"[4] Writing strings to disk.... "<<endl;
          this->ustOutputToDisk(sorter);
         
         //VALIDATION
@@ -994,14 +996,14 @@ public:
              
              //validate();
              cout<<"## [5] Validating decoded ESS...\n";
-             system((param.DSK_PATH +"dsk -file "+param.UNITIG_FILE+" -kmer-size "+to_string(K)+" -abundance-min 1  -verbose 0").c_str());
-             system((param.DSK_PATH + "dsk -file absorbDecompressed.fa -kmer-size "+to_string(K)+" -abundance-min 1  -verbose 0").c_str());
-             system((param.DSK_PATH+"dsk2ascii -file list_reads.unitigs.h5 -out output-bcalm.txt  -verbose 0").c_str());
-             system((param.DSK_PATH + "dsk2ascii -file absorbDecompressed.h5 -out output-my.txt   -verbose 0").c_str());
+             if(system((param.DSK_PATH +"dsk -file "+param.UNITIG_FILE+" -kmer-size "+to_string(K)+" -out list_reads.unitigs.h5 -abundance-min 1  -verbose 0").c_str())!=0) exit(3);
+             if(system((param.DSK_PATH + "dsk -file absorbDecompressed.fa -kmer-size "+to_string(K)+" -abundance-min 1  -verbose 0").c_str())!=0) exit(3);
+             if(system((param.DSK_PATH+"dsk2ascii -file list_reads.unitigs.h5 -out output-bcalm.txt  -verbose 0").c_str())!=0) exit(3);
+             if(system((param.DSK_PATH + "dsk2ascii -file absorbDecompressed.h5 -out output-my.txt   -verbose 0").c_str())!=0) exit(3);
              //cout<<"doing highly  accurate validation................"<<endl;
-             system("sort -k 1 -n output-bcalm.txt -o a.txt; sort -k 1 -n output-my.txt -o b.txt");
-             system("cmp a.txt b.txt && echo '### SUCCESS: Files Are Identical! ###' || echo '### WARNING: Files Are Different! ###'");
-             system("rm -rf a.txt b.txt output-bcalm.txt output-my.txt list_reads.unitigs.h5 absorbDecompressed.h5");
+             if(system("sort -k 1 -n output-bcalm.txt -o a.txt; sort -k 1 -n output-my.txt -o b.txt")!=0) exit(3);
+             if(system("cmp a.txt b.txt && echo '### SUCCESS: Files Are Identical! ###' || echo '### WARNING: Files Are Different! ###'")!=0) exit(3);
+             if(system("rm -rf a.txt b.txt output-bcalm.txt output-my.txt list_reads.unitigs.h5 absorbDecompressed.h5")!=0) exit(3);
          }
         
         
@@ -1018,8 +1020,8 @@ public:
          stat.statPrinter(globalStatFile, "C_ESSTIP", stat.C_esstip);
         stat.statPrinter(globalStatFile, "C_NONDNA_ESSTIP", stat.C_nondna_esstip);
 
-        stat.statPrinter(globalStatFile, "CHAR_PER_KMER_ESSTIP", esstipCharPerKmer,true);
-        stat.statPrinter(globalStatFile, "CHAR_PER_KMER_NONDNA_ESSTIP", stat.C_nondna_esstip*1.0/stat.nKmers,true);
+        stat.statPrinter(globalStatFile, "CHAR_PER_KMER_ESSTIP", esstipCharPerKmer);
+        stat.statPrinter(globalStatFile, "CHAR_PER_KMER_NONDNA_ESSTIP", stat.C_nondna_esstip*1.0/stat.nKmers);
         
         
         stat.statPrinter(globalStatFile, "TIME_TOTAL_SEC", TIME_TOTAL_SEC);
@@ -1031,7 +1033,8 @@ public:
          
          globalStatFile.close();
          
-        cout << "------------ ESS-Compress (TIP mode) completed successfully. Output is in file "<<param.OUTPUT_FILENAME << " ------------"<<endl;
+        cout << "------ End of ESS-Compress (TIP mode) core : Success! ------"<<endl;
+        //Output is in file "<<param.OUTPUT_FILENAME <<
          cout << "Total number of unique "<<K<<"-mers " <<  "= " << stat.nKmers << endl;
         
          cout << "Size of ESS-TIP representation" <<  "= " <<esstipCharPerKmer << " char/k-mer"<< endl;

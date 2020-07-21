@@ -21,6 +21,8 @@
 #include <unistd.h>
 
 #include "misc.hpp"
+
+
 using namespace std;
 
 #ifndef NDEBUG
@@ -67,7 +69,7 @@ using namespace std;
 //    return outString;
 //}
 
-int decodeTip(int K, string UNITIG_FILE="ust_ess_tip.txt", string OUT_FILE = "tip.fa" ){
+int decodeTip(int K, string UNITIG_FILE="ust_ess_tip.txt", string OUT_FILE = "absorbDecompressed.fa" ){
     ifstream unitigFile;
     unitigFile.open(UNITIG_FILE);
 
@@ -115,8 +117,11 @@ int decodeTip(int K, string UNITIG_FILE="ust_ess_tip.txt", string OUT_FILE = "ti
                 }else if(line[i]=='(' || line[i]==')'){
                     if(startPrefCut){ //already has one
                         startPrefCut = false;
-                        //outFile<< "> pref: " << " "  << endl; //for debug
-                        outFile<< ">"<< endl;
+                        outFile<< ">" ;
+                        if(DDEBUG){
+                            outFile<< walkid << " pref"; //for Debug
+                        }
+                        outFile<< endl;
                         outFile<< (pref + tip) << endl;
                         tip = "";
                     }else if(!startPrefCut){ //prefix is cut starts
@@ -126,8 +131,12 @@ int decodeTip(int K, string UNITIG_FILE="ust_ess_tip.txt", string OUT_FILE = "ti
                 }else if(line[i]=='{' || line[i]=='}'){ //suffix is cut
                     if(startSufCut){ //already has one
                         startSufCut = false;
-                        //outFile<< ">suf: " << " " << endl; //for Debug
-                        outFile<< ">" << endl;
+                        
+                        outFile<< ">" ;
+                        if(DDEBUG){
+                            outFile<< walkid << " suf"; //for Debug
+                        }
+                        outFile<< endl;
                         outFile<< (tip + suf) << endl;
                         tip = "";
                     }else if(!startSufCut){
@@ -138,7 +147,12 @@ int decodeTip(int K, string UNITIG_FILE="ust_ess_tip.txt", string OUT_FILE = "ti
             }
             //print the tips before printing the contig
             //outFile<<">"<<walkid-1<<" : "<<"\n"; for Debug
-            outFile<<">\n";
+            
+            outFile<< ">" ;
+            if(DDEBUG){
+                outFile<< walkid; //for Debug
+            }
+            outFile<<"\n";
             outFile<<sbuf << endl;
         }
     }
@@ -146,7 +160,7 @@ int decodeTip(int K, string UNITIG_FILE="ust_ess_tip.txt", string OUT_FILE = "ti
     unitigFile.close();
     outFile.close();
 
-    cout << "Complete conversion." << endl;
+    //cout << "Complete conversion." << endl;
     return EXIT_SUCCESS;
 }
 
@@ -154,13 +168,12 @@ int decodeTip(int K, string UNITIG_FILE="ust_ess_tip.txt", string OUT_FILE = "ti
 void updateCurrOverlap(char c, string& lastk1, int K){
     if(lastk1.length() < K - 1){
         lastk1 += c;
-        //printf("baje case");
     }else{
         lastk1 = lastk1.substr(1, K-2) + c;
     }
 }
 
-void decompressEnclosed(string& s, int& i, string overlapFromParent, int K, ofstream & FOUT){
+void decompressEnclosed(string& s, int& i, string overlapFromParent, int K, ofstream & FOUT, int stringID){
     //assert(overlapFromParent.length()==K-1);
     ASSERT(overlapFromParent.length()==K-1, "The +/- should be replace by a string of length " << K-1 << ", but we receive string of length " << overlapFromParent.length() << "\n");
 
@@ -176,7 +189,13 @@ void decompressEnclosed(string& s, int& i, string overlapFromParent, int K, ofst
             overlapFromParent=currOverlap;
             sOut="";
         }else if(c==']'){
+            if(DDEBUG){
+            FOUT<<">"<<stringID<<"\n"<<sOut<<endl;
+                
+            }else{
             FOUT<<">\n"<<sOut<<endl;
+
+            }
             if(!decstack.empty()){
                 currOverlap =  get<0>(decstack.top());
                 overlapFromParent = get<1>(decstack.top());
@@ -238,7 +257,7 @@ void decompressEnclosed(string& s, int& i, string overlapFromParent, int K, ofst
 //    return S;
 //}
 
-vector<string> decompress(string& s, int K, ofstream & FOUT){
+void decompress(string& s, int K, ofstream & FOUT, int stringID){
     vector<string> S;
     string sOut;
     string currOverlap;
@@ -246,20 +265,21 @@ vector<string> decompress(string& s, int K, ofstream & FOUT){
     while(i < s.length()){
         char c = s[i++];
            if(c=='['){
-               decompressEnclosed(s, i,currOverlap, K, FOUT);
+               decompressEnclosed(s, i,currOverlap, K, FOUT, stringID);
            }else{
                sOut += c;
                updateCurrOverlap(c, currOverlap, K);  //update currOverlap
            }
     }
    // cout<< "Complete conversion of: " <<s << endl;
-    FOUT<<">\n"<<sOut<<endl;
-    return S;
+    
+    if(DDEBUG){
+        FOUT<<">"<<stringID<<"\n"<<sOut<<endl;  
+    }else{
+        FOUT<<">\n"<<sOut<<endl;
+    }
+    
 }
-
-
-///Users/Sherlock/Library/Developer/Xcode/DerivedData/bcl-awuuvnjbkkmukneqtvxvqashsbtu/Build/Products/Debug/tipOutput.txt
-///Users/Sherlock/amaturWS/testEncoded.txt
 void decodeOneAbsorb(int K, string ENCODED_FILE= "ust_ess_abs.txt", string OUT_FA_FILE="absorbDecompressed.fa"){
     ifstream encodedFile;
     encodedFile.open(ENCODED_FILE);
@@ -268,35 +288,16 @@ void decodeOneAbsorb(int K, string ENCODED_FILE= "ust_ess_abs.txt", string OUT_F
     outFile.open(OUT_FA_FILE);
     string line;
     int nWalks = 0;
-
-    vector<int> nWalkNo;
-    vector<string> collectedStrings;
     while (getline(encodedFile, line)) {
         //cout<<line<<endl;
         if (line.empty() || line.substr(0, 1).compare(">") == 0) {
 
         } else {
             nWalks++;
-            vector<string> S1 = decompress(line, K, outFile);
-            for(int j = 0; j < S1.size(); j++){
-                //collectedStrings.push_back(S1.at(j));
-                nWalkNo.push_back(nWalks);
-            }
-
+            decompress(line, K, outFile, nWalks);
         }
     }
     encodedFile.close();
-
-    int i =0;
-
-    //double memvmKB,memrssKB;
-    //process_mem_usage(memvmKB, memrssKB);
-    //   cout<<"inside decoder memory (virtual) to do ONLY UST DFS (KB)"<<memvmKB<<endl;
-    //   cout<<"inside decoder  memory (rss) to do ONLY UST DFS (KB)"<<memrssKB<<endl;
-    for(string s: collectedStrings){
-        //outFile<<">"<<nWalkNo[i++]<<"\n"<<s<<endl;
-        //cout<<s<<endl;
-    }
     outFile.close();
 }
 

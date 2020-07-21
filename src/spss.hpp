@@ -42,7 +42,7 @@ public:
     
     typedef struct {
         unitig_t serial;
-        uint64_t ln;
+        long long unsigned int ln;
     } unitig_struct_t;
     vector<unitig_struct_t> unitigs;
     

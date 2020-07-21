@@ -1,5 +1,4 @@
-// UST
-// Last Edited: May 20, 2020
+// Last Edited: July 19, 2020
 
 #include "ust.hpp"
 #include "tip.hpp"
@@ -14,13 +13,14 @@ int main(int argc, char** argv) {
     cout<<"ESS-Compress does not support this OS."<<endl;
     return EXIT_FAILURE; //exit(2);
 #endif
-    
+
+    if(DDEBUG) cout<<"----------------RUNNING IN DEBUG MODE--------------------"<<endl;
     bool PROFILE_AND_STAT = false;
-    int IS_TIP = 0;
+    int TYPE_0_1_2 = 0;
     int K = 0;
     
-    char * nvalue;
-    string graph_file_name;
+    char * nvalue = NULL;
+    string graph_file_name = "";
     
     char c;
     while( ( c = getopt (argc, argv, "i:k:t:p:") ) != -1 )
@@ -30,9 +30,9 @@ int main(int argc, char** argv) {
             case 't':
                 if(optarg) {
                     if(strcmp(optarg, "0")==0 || strcmp(optarg, "1")==0 ||  strcmp(optarg, "2")==0){
-                        IS_TIP = static_cast<int>(std::atoi(optarg));
+                        TYPE_0_1_2 = static_cast<int>(std::atoi(optarg));
                     }else{
-                        fprintf(stderr, "Error: use either -t 0 or -t 1 \n");
+                        fprintf(stderr, "Error: use either -f 0 or -f 1 or -f 2 \n");
                         exit(EXIT_FAILURE);
                     }
                 }
@@ -58,20 +58,20 @@ int main(int argc, char** argv) {
                         exit(EXIT_FAILURE);
                     }
                 }else{
-                    fprintf(stderr, "Usage: %s -k <kmer size> -i <input-file-name> [-t <0: for no tip, 1: tip fast, default = 0>]\n",
+                    fprintf(stderr, "Usage: %s -k <kmer size> -i <input-file-name> [-t <0: for default mode (max compression), 1: fast mode (low compression), 2: output spss only with no compression, default = 0>]\n",
                             argv[0]);
                     exit(EXIT_FAILURE);
                 }
                 break;
             default:
-                fprintf(stderr, "Usage: %s -k <kmer size> -i <input-file-name> [-t <0: for no tip, 1: tip fast, default = 0>]\n",
-                        argv[0]);
+                fprintf(stderr, "Usage: %s -k <kmer size> -i <input-file-name> [-t <0: for default mode (max compression), 1: fast mode (low compression), 2: output spss only with no compression, default = 0>]\n",
+                            argv[0]);
                 exit(EXIT_FAILURE);
         }
     }
     
     if(K==0 || strcmp(nvalue, "")==0){
-        fprintf(stderr, "Usage: %s -k <kmer size> -i <input-file-name> [-t <0: for no tip, 1: tip fast, default = 0>]\n",
+        fprintf(stderr, "Usage: %s -k <kmer size> -i <input-file-name> [-f <0: for default mode (maximum compression), 1: for fast mode (low compression), default = 0>]\n",
                 argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -80,10 +80,10 @@ int main(int argc, char** argv) {
     
     if(PROFILE_AND_STAT){
         ProfileGraph().run(graph_file_name, K);
-    }else if(IS_TIP == 2){
+    }else if(TYPE_0_1_2 == 2){
         UST ust;
         ust.run(graph_file_name, K, 0);
-    }else if(IS_TIP == 1){
+    }else if(TYPE_0_1_2 == 1){
         ESSTip esstip;
         esstip.run(graph_file_name, K);
     }else{

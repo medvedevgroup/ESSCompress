@@ -18,7 +18,7 @@ using namespace std;
 class Stat{
 public:
     typedef int32_t NODE_T;
-    typedef uint_fast64_t TOTALCHAR_T;
+    typedef long long unsigned int TOTALCHAR_T;
     
     TOTALCHAR_T nKmers = 0;
     TOTALCHAR_T C_bcalm = 0;

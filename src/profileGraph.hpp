@@ -260,7 +260,7 @@ void ProfileGraph::readUnitigFile(const string& unitigFileName, vector<unitig_st
                     exit(3);
                 }
                 
-                sscanf(lnline, "%*5c %d", &unitig_struct.ln);
+                sscanf(lnline, "%*5c %llu", &unitig_struct.ln);
                 
                 int abpos = line.find("ab") + 5;
                 int Lpos = line.find("L:");
@@ -293,7 +293,7 @@ void ProfileGraph::readUnitigFile(const string& unitigFileName, vector<unitig_st
                 }
                 
                 //>0 LN:i:13 KC:i:12 km:f:1.3  L:-:0:- L:-:2:-  L:+:0:+ L:+:1:-
-                sscanf(lnline, "%*5c %d", &unitig_struct.ln);
+                sscanf(lnline, "%*5c %llu", &unitig_struct.ln);
                 
                 
                 if(unitig_struct.ln < smallestK){

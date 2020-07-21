@@ -1,6 +1,8 @@
 #!/bin/bash
 DDEBUG=1
 
+
+
 function abspath {
     if [[ -d "$1" ]]
     then
@@ -17,6 +19,7 @@ function abspath {
         return 127
     fi
 }
+PPATH=$(abspath $(dirname $0))
 
 Help()
 {
@@ -54,17 +57,17 @@ validate(){
    UNITIG_FILE=$2
    DECOMPRESSED_FILE=$3
    echo "Validating decoded ESS...";
-   dskESS -file $UNITIG_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out unitigs.h5
-   dskESS -file $DECOMPRESSED_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out spss.h5
-   dsk2asciiESS -file unitigs.h5 -out unitigs.txt  -verbose 0
-   dsk2asciiESS -file spss.h5 -out spss.txt  -verbose 0
+   $PPATH/dskESS -file $UNITIG_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out unitigs.h5
+   $PPATH/dskESS -file $DECOMPRESSED_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out spss.h5
+   $PPATH/dsk2asciiESS -file unitigs.h5 -out unitigs.txt  -verbose 0
+   $PPATH/dsk2asciiESS -file spss.h5 -out spss.txt  -verbose 0
    #echo "doing highly  accurate validation................"
    echo "Sorting k-mers for validation................"
    #sort -k 1 -n unitigs.txt -o sorted_unitigs.txt; sort -k 1 -n spss.txt -o sorted_spss.txt
    sort unitigs.txt -o sorted_unitigs.txt; sort spss.txt -o sorted_spss.txt
    
    
-   cmp sorted_unitigs.txt sorted_spss.txt && echo '### SUCCESS: Files Are Identical! ###' || echo '### WARNING: Files Are Different! ###'
+   cmp sorted_unitigs.txt sorted_spss.txt && echo '### SUCCESS: The two files contain same k-mers! ###' || echo '### WARNING: Files contain different k-mers! ###'
 
    if [[ DDEBUG -eq 0 ]];  then
     rm -rf sorted_spss.txt spss.txt unitigs.txt unitigs.h5 spss.h5
@@ -91,19 +94,19 @@ essCompress_prior(){
    # cd tmp_ess
 
    ## get unitigs
-   echo "Running BCALM2 to get compacted de Bruijn graph..."
-   /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm bcalmESS -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 0
+   echo "*** Running BCALM2 to get compacted de Bruijn graph..."
+   /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bcalmESS -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 0
    failureMessage BCALM2
    rm -rf *.glue* *.h5 trashme*
 
    ## get one k-mer per line fasta file
-   echo "Running DSK to get k-mers..."
-   dskESS -file kmers.unitigs.fa -kmer-size $K -abundance-min 1 -verbose 0 -out kmers.h5
-   failureMessage DSK
+   # echo "*** Running DSK to get k-mers..."
+   # $PPATH/dskESS -file kmers.unitigs.fa -kmer-size $K -abundance-min 1 -verbose 0 -out kmers.h5
+   # failureMessage DSK
 
-   dsk2asciiESS -fasta -file kmers.h5 -out $KMERS_FA -verbose 0
-   failureMessage DSK2ASCII
-   rm -rf kmers.h5
+   # $PPATH/dsk2asciiESS -fasta -file kmers.h5 -out $KMERS_FA -verbose 0
+   # failureMessage DSK2ASCII
+   # rm -rf kmers.h5
 }
 
 #step 1
@@ -131,20 +134,20 @@ essCompress_main(){
 
    #get ess compression
    #L=kmers.unitigs.fa
-   /usr/bin/time  -f "%M\t%e" --output-file=mem_ess_$TYPE essC -i $L -k $K -t $TYPE
-   failureMessage ESS
+   /usr/bin/time  -f "%M\t%e" --output-file=mem_ess_$TYPE $PPATH/essC -i $L -k $K -t $TYPE
+   failureMessage "ESS-Compress core"
 
    if [[ "$TYPE" -eq "0" ]]; then
       cat kmers.ess | tr "[" "g" | tr "]" "t" | tr "+" "a" | tr "-" "c" | awk -F=' ' '{print ""$1}' > kmers_acgt.ess
       var=$(echo ">2.0\_$K\_0") ;  sed -i "1s/.*/$var/" kmers_acgt.ess
-      /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE mfcESS kmers_acgt.ess
+      /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE $PPATH/mfcESS kmers_acgt.ess
       failureMessage MFC
       mv kmers_acgt.ess.mfc $FULLFINALMFC
       echo "Output is in '$FULLFINALMFC'".
    elif [[ "$TYPE" -eq  "1" ]]; then
       cat kmers.esstip | tr "{" "a" | tr "}" "c" | tr "(" "g" | tr ")" "t" | awk -F=' ' '{print ""$1}' > kmers_acgt.esstip
       var=$(echo ">2.0\_$K\_1") ;  sed -i "1s/.*/$var/" kmers_acgt.esstip
-      /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE mfcESS kmers_acgt.esstip
+      /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE $PPATH/mfcESS kmers_acgt.esstip
       failureMessage MFC
       mv kmers_acgt.esstip.mfc $FULLFINALMFC
       echo "Output is in '$FULLFINALMFC'".
@@ -163,7 +166,7 @@ essCompress_main(){
          #/usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE mfcESS kmers2.ess
 
          var=$(echo ">2.0\_$K\_0") ; sed -i "1s/.*/$var/" kmers.ess
-         /usr/bin/time  -f "%M\t%e" --output-file=mem_dec_$TYPE essD kmers.ess
+         /usr/bin/time  -f "%M\t%e" --output-file=mem_dec_$TYPE $PPATH/essD kmers.ess
 
          validate $K $KMERS_FA kmers.ess.spss
 
@@ -172,11 +175,11 @@ essCompress_main(){
          #/usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE mfcESS kmers2.esstip
 
          var=$(echo ">2.0\_$K\_1") ;  sed -i "1s/.*/$var/" kmers.esstip
-         /usr/bin/time  -f "%M\t%e" --output-file=mem_dec_$TYPE essD kmers.esstip
+         /usr/bin/time  -f "%M\t%e" --output-file=mem_dec_$TYPE $PPATH/essD kmers.esstip
 
          validate $K $KMERS_FA kmers.esstip.spss
       else
-         /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE mfcESS kmers.ust.spss
+         /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE $PPATH/mfcESS kmers.ust.spss
          validate $K $KMERS_FA kmers.ust.spss
       fi
 
@@ -202,7 +205,7 @@ countDNA(){
 failureMessage(){
    if [ $? -eq 0 ]
    then
-      echo "----------------------------"
+      #echo "----------------------------"
       echo "$1 completed successfully."
       echo "----------------------------"
    else
@@ -329,7 +332,7 @@ if [[ fastaORcdbg -eq 0 ]]; then
 
    essCompress_prior $input_abspa $K $A $MODE 
    essCompress_main $input_directory/tmp_ess/kmers.unitigs.fa $K $A $MODE "$OUTDIR/$(basename "$input_abspa")"
-    
+   rm -rf tmp_ess    
 fi
 
 # if [[ fastaORcdbg -eq 1 ]]; then
@@ -339,3 +342,4 @@ fi
 #    OUTDIR="$OUTDIR/$(basename "$input_abspa")"
 #    essCompress_main $input_abspa $K $A $MODE $OUTDIR
 # fi
+
