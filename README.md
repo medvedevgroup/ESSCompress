@@ -78,6 +78,14 @@ $ bin/essCompress -i list_reads -k 5
 
 ESS ignores any paired-end information present in the input. 
 
+# Running in UST mode
+In our [RECOMB paper](http://doi.org/10.1007/978-3-030-45257-5_10) we described a program called UST to generate a spectrum-preserving string set (SPSS) from a set of sequences. The original UST software is now redundant because ESS can be used to generate the UST SPSS. In particular, running *essCompress* followed by *essDecompress* generates the UST SPSS. For example, if you are in the base directory *essCompress-v2.0* and want to run UST on *examples/smallExample.fa*, do:
+```
+$ bin/essCompress -k 11 -i examples/smallExample.fa
+$ bin/essDecompress examples/smallExample.fa.essc   
+```
+The output file `examples/smallExample.fa.essd` contains the SPPS output by UST.
+
 
 # Installation from source
 
@@ -104,3 +112,6 @@ To check that you have properly installed ESS, please try to compress a small fi
 
 If using ESS-Compresss in your research, please cite
 * Amatur Rahman, Rayan Chikhi and Paul Medvedev, Disk compression of k-mer sets, WABI 2020.
+
+If you are using it not for the purposes of compression but for the purposes of generating an SPSS, please also cite
+* Amatur Rahman and Paul Medvedev, Representation of k-mer Sets Using Spectrum-Preserving String Sets, RECOMB 2020.
