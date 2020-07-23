@@ -82,7 +82,8 @@ If they contain the same k-mers (i.e. 11-mers), you will see an output like this
 	   -k [INT]          k-mer size (must be >=4)
 
 	   optional parameters:  
-	   -a [INT]          DEFAULT=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out. 	   -f		     Fast compression mode: uses less memory, but achieves smaller compression ratio.
+	   -a [INT]          DEFAULT=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out.   
+	   -f		     Fast compression mode: uses less memory, but achieves smaller compression ratio.
 	   -h                Print this Help.
 	   -v                Enable verbose mode: print more useful information.
 	   -c                Verify correctness: check that all the distinct k-mers in the input file appears exactly once in the compressed output file.
