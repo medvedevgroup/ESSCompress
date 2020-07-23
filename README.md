@@ -62,8 +62,8 @@ You'll now see the decompressed file example.fa.essd in the same directory.
 >
 AAAAAAACCCCCCCCCCA
 ```
-Notice that the decompressed fasta file is not the same as the original file, but it contains the same k-mers as smallExample.fa. You can double check this using
-`./aux/essAuxValidate 11 smallExample.fa smallExample.fa.essd`.   
+Notice that the decompressed fasta file is not the same as the original file, but it contains the same k-mers as smallExample.fa. You can double check this using the command   
+`./aux/essAuxValidate 11 smallExample.fa smallExample.fa.essd`   
 If they contain the same k-mers (i.e. 11-mers), you will see an output like this:
 
 ```
