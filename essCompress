@@ -42,14 +42,14 @@ Help()
    echo "-k [INT]          k-mer size (must be >=4)"
    echo "optional arguments:"
    echo "-a [INT]          DEFAULT=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out. "
-   echo "-f		            Fast compression mode: uses less memory, but achieves smaller compression ratio."
+   echo "-f                Fast compression mode: uses less memory, but achieves smaller compression ratio."
    echo "-h                Print this Help."
    echo "-v                Enable verbose mode: print more useful information."
    echo "-c                Verify correctness: check that all the distinct k-mers in the input file appears exactly once in compressed file."
    echo
    exit
 }
-  
+
 
 
 Version()
@@ -74,15 +74,15 @@ validate(){
    #echo "Sorting k-mers for validation................"
    #sort -k 1 -n unitigs.txt -o sorted_unitigs.txt; sort -k 1 -n spss.txt -o sorted_spss.txt
    sort unitigs.txt -o sorted_unitigs.txt; sort spss.txt -o sorted_spss.txt
-   
-   
+
+
    cmp sorted_unitigs.txt sorted_spss.txt && echo '### SUCCESS: Input and output contain same k-mers! ###' || echo '### WARNING: Input and output contain different k-mers! ###'
 
    if [[ DDEBUG -eq 0 ]];  then
     rm -rf sorted_spss.txt spss.txt unitigs.txt unitigs.h5 spss.h5
     rm -rf sorted_unitigs.txt
    fi
-   
+
 }
 
 ################################################################################
@@ -105,8 +105,8 @@ essCompress_prior(){
             echo "Running BCALM2 to get compacted de Bruijn graph..."
             /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/aux/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 0
       fi
-      
-       
+
+
    elif [ "$K" -gt "3" ]; then
       if [[ VERBOSEMODE -eq 0 ]]; then
             /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/aux/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -minimizer-size 2 -verbose 0 > bcalm_output
@@ -135,7 +135,7 @@ essCompress_main(){
    STREXTD=".essd"
 
    L=$(abspath $L)
-   O2=$(dirname $L)  
+   O2=$(dirname $L)
    FULLFINALMFC=$(echo $O$STREXT)
    FULLFINALMFCD=$(echo $O$STREXTD)
    KMERS_FA=$L
@@ -190,7 +190,7 @@ essCompress_main(){
       fi
 
    fi
-   
+
    cd $O2
    cd ../
 
@@ -198,7 +198,7 @@ essCompress_main(){
     rm -rf tmp_ess
    fi
 
-   
+
 }
 
 countNonDNA(){
@@ -217,7 +217,7 @@ failureMessage(){
       #echo "----------------------------"
    else
       #echo "----------------------------"
-      echo "$1 FAILED." 
+      echo "$1 FAILED."
       rm -rf $input_directory/$TMPDIRNAME
       #echo "----------------------------"
       exit
@@ -332,22 +332,22 @@ if [[ fastaORcdbg -eq 0 ]]; then
 
     input_abspa=$(abspath $INPUTFILE)  #absolute path: (i.e. /s/rhodo/list_reads)
     input_directory=$(dirname $input_abspa) #get the directory of input file (i.e. /s/rhodo/)
-    
+
     if [[ outdirset -eq 0 ]]; then
       OUTDIR=$(dirname $input_abspa) #set the output directory same as that of input file (i.e. /s/rhodo/)
     fi
 
    cd $OUTDIR
-   
-   
+
+
    mkdir -p $TMPDIRNAME
    cd $TMPDIRNAME
    #mkdir -p tmp_ess
    #cd tmp_ess
 
-   essCompress_prior $input_abspa $K $A $MODE 
+   essCompress_prior $input_abspa $K $A $MODE
    essCompress_main $input_directory/$TMPDIRNAME/kmers.unitigs.fa $K $A $MODE "$OUTDIR/$(basename "$input_abspa")"
-   #rm -rf tmp_ess    
+   #rm -rf tmp_ess
    rm -rf $TMPDIRNAME
 fi
 
@@ -359,4 +359,3 @@ fi
 #    OUTDIR="$OUTDIR/$(basename "$input_abspa")"
 #    aux/essAuxCompressompress_main $input_abspa $K $A $MODE $OUTDIR
 # fi
-
