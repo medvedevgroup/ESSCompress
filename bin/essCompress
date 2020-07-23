@@ -1,5 +1,5 @@
 #!/bin/bash
-#Last modified: Jul 23, 9 AM
+#Last modified: Jul 23, 11 AM
 
 DDEBUG=0
 TMPDIRNAME=$(echo "tmp_ess_$(date +"%s")")
@@ -29,7 +29,7 @@ function abspath {
     fi
 }
 
-PPATH=$(abspath $(dirname $0))
+PPATH="$(abspath $(dirname $0))/../"
 
 Help()
 {
@@ -37,15 +37,19 @@ Help()
    #echo "Description of the script functions here."
    #echo
    echo "Syntax: ./essCompress [parameters] "
+   echo
    echo "mandatory arguments:"
-   echo "-i [filepath]     Full path for input file."
-   echo "-k [INT]          k-mer size (must be >=4)"
+   echo "-k [int]          k-mer size (must be >=4)"
+   echo "-i [input-file]   Path to input file. Input file can be either of these 2 formats:"
+   echo "                     1. a single fasta/fastq file (either gzipped or not)   "
+   echo "                     2. a single text file containing the list of multiple fasta/fastq files (one file per line)	"
+   echo
    echo "optional arguments:"
-   echo "-a [INT]          DEFAULT=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out. "
+   echo "-a [int]          Default=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out. "
    echo "-f                Fast compression mode: uses less memory, but achieves smaller compression ratio."
-   echo "-h                Print this Help."
    echo "-v                Enable verbose mode: print more useful information."
    echo "-c                Verify correctness: check that all the distinct k-mers in the input file appears exactly once in compressed file."
+   echo "-h                Print this Help."
    echo
    exit
 }
@@ -66,10 +70,10 @@ validate(){
    DECOMPRESSED_FILE=$3
    echo "-------"
    echo "Verifying correctness of ESS-Compress core algorithm...";
-   $PPATH/aux/essAuxDsk -file $UNITIG_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out unitigs.h5
-   $PPATH/aux/essAuxDsk -file $DECOMPRESSED_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out spss.h5
-   $PPATH/aux/essAuxDsk2ascii -file unitigs.h5 -out unitigs.txt  -verbose 0
-   $PPATH/aux/essAuxDsk2ascii -file spss.h5 -out spss.txt  -verbose 0
+   $PPATH/bin/essAuxDsk -file $UNITIG_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out unitigs.h5
+   $PPATH/bin/essAuxDsk -file $DECOMPRESSED_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out spss.h5
+   $PPATH/bin/essAuxDsk2ascii -file unitigs.h5 -out unitigs.txt  -verbose 0
+   $PPATH/bin/essAuxDsk2ascii -file spss.h5 -out spss.txt  -verbose 0
    #echo "doing highly  accurate validation................"
    #echo "Sorting k-mers for validation................"
    #sort -k 1 -n unitigs.txt -o sorted_unitigs.txt; sort -k 1 -n spss.txt -o sorted_spss.txt
@@ -100,19 +104,19 @@ essCompress_prior(){
    ## get unitigs
    if [ "$K" -gt "10" ]; then
       if [[ VERBOSEMODE -eq 0 ]]; then
-            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/aux/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 0 > bcalm_output
+            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bin/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 0 > bcalm_output
       else
             echo "Running BCALM2 to get compacted de Bruijn graph..."
-            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/aux/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 0
+            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bin/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 0
       fi
 
 
    elif [ "$K" -gt "3" ]; then
       if [[ VERBOSEMODE -eq 0 ]]; then
-            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/aux/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -minimizer-size 2 -verbose 0 > bcalm_output
+            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bin/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -minimizer-size 2 -verbose 0 > bcalm_output
       else
             echo "Running BCALM2 to get compacted de Bruijn graph..."
-            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/aux/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -minimizer-size 2 -verbose 0
+            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bin/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -minimizer-size 2 -verbose 0
       fi
 
    else
@@ -143,13 +147,13 @@ essCompress_main(){
 
    cd $O2  #this is inside tmp_ess/
 
-   /usr/bin/time  -f "%M\t%e" --output-file=mem_ess_$TYPE $PPATH/aux/essAuxCompress -i $L -k $K -t $TYPE -v $VERBOSEMODE
+   /usr/bin/time  -f "%M\t%e" --output-file=mem_ess_$TYPE $PPATH/bin/essAuxCompress -i $L -k $K -t $TYPE -v $VERBOSEMODE
    failureMessage "ESS-Compress core"
 
    if [[ "$TYPE" -eq "0" ]]; then
       cat kmers.ess | tr "[" "g" | tr "]" "t" | tr "+" "a" | tr "-" "c" | awk -F=' ' '{print ""$1}' > kmers_acgt.ess
       var=$(echo ">2.0\_$K\_0") ;  sed -i "1s/.*/$var/" kmers_acgt.ess
-      /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE $PPATH/aux/essAuxMFCompressC kmers_acgt.ess
+      /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE $PPATH/bin/essAuxMFCompressC kmers_acgt.ess
       failureMessage MFC
       mv kmers_acgt.ess.mfc $FULLFINALMFC
 
@@ -157,7 +161,7 @@ essCompress_main(){
    elif [[ "$TYPE" -eq  "1" ]]; then
       cat kmers.esstip | tr "{" "a" | tr "}" "c" | tr "(" "g" | tr ")" "t" | awk -F=' ' '{print ""$1}' > kmers_acgt.esstip
       var=$(echo ">2.0\_$K\_1") ;  sed -i "1s/.*/$var/" kmers_acgt.esstip
-      /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE $PPATH/aux/essAuxMFCompressC kmers_acgt.esstip
+      /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE $PPATH/bin/essAuxMFCompressC kmers_acgt.esstip
       failureMessage MFC
       mv kmers_acgt.esstip.mfc $FULLFINALMFC
 
@@ -174,18 +178,18 @@ essCompress_main(){
       if [[ "$TYPE" -eq "0" ]]; then
 
          var=$(echo ">2.0\_$K\_0") ; sed -i "1s/.*/$var/" kmers.ess
-         /usr/bin/time  -f "%M\t%e" --output-file=mem_dec_$TYPE $PPATH/aux/essAuxDecompress kmers.ess
+         /usr/bin/time  -f "%M\t%e" --output-file=mem_dec_$TYPE $PPATH/bin/essAuxDecompress kmers.ess
 
          validate $K $KMERS_FA kmers.ess.spss
 
       elif [[ "$TYPE" -eq  "1" ]]; then
 
          var=$(echo ">2.0\_$K\_1") ;  sed -i "1s/.*/$var/" kmers.esstip
-         /usr/bin/time  -f "%M\t%e" --output-file=mem_dec_$TYPE $PPATH/aux/essAuxDecompress kmers.esstip
+         /usr/bin/time  -f "%M\t%e" --output-file=mem_dec_$TYPE $PPATH/bin/essAuxDecompress kmers.esstip
 
          validate $K $KMERS_FA kmers.esstip.spss
       else
-         /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE $PPATH/aux/essAuxMFCompressC kmers.ust.spss
+         /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE $PPATH/bin/essAuxMFCompressC kmers.ust.spss
          validate $K $KMERS_FA kmers.ust.spss
       fi
 

@@ -6,15 +6,15 @@ CFLAGS=-w -std=c++11 -O3
 all: make_directories essC essD
 
 essC:
-	$(CC) $(CFLAGS) -o ../aux/essAuxCompress ess.cpp
+	$(CC) $(CFLAGS) -o ../bin/essAuxCompress ess.cpp
 
 essD:
-	$(CC) $(CFLAGS) -o ../aux/essAuxDecompress decoder.cpp
+	$(CC) $(CFLAGS) -o ../bin/essAuxDecompress decoder.cpp
 
 .PHONY: make_directories
 make_directories:
-	mkdir -p ../aux/
+	mkdir -p ../bin/
 
 clean:
-	rm -rf *.o ../aux/essAuxCompress ../aux/essAuxDecompress ../aux/essAuxBcalm ../aux/essAuxDsk ../aux/essAuxDsk2ascii ../aux/essAuxMFCompressC ../aux/essAuxMFCompressD ../dependencies/bcalm ../dependencies/dsk 
+	rm -rf *.o ../bin/essAuxCompress ../bin/essAuxDecompress ../bin/essAuxBcalm ../bin/essAuxDsk ../bin/essAuxDsk2ascii ../bin/essAuxMFCompressC ../bin/essAuxMFCompressD ../dependencies/bcalm ../dependencies/dsk 
 	cd ../dependencies/mfc1.01; make -f Makefile.linux clean

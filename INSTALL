@@ -40,13 +40,13 @@ cd $PPATH/
 
 rm -rf $PPATH/dependencies/bcalm
 rm -rf $PPATH/dependencies/dsk
-rm -rf $PPATH/aux/essAuxCompress
-rm -rf $PPATH/aux/essAuxDecompress
-rm -rf $PPATH/aux/essAuxDsk
-rm -rf $PPATH/aux/essAuxDsk2ascii
-rm -rf $PPATH/aux/essAuxBcalm
-rm -rf $PPATH/aux/essAuxMFCompressC
-rm -rf $PPATH/aux/essAuxMFCompressD
+rm -rf $PPATH/bin/essAuxCompress
+rm -rf $PPATH/bin/essAuxDecompress
+rm -rf $PPATH/bin/essAuxDsk
+rm -rf $PPATH/bin/essAuxDsk2ascii
+rm -rf $PPATH/bin/essAuxBcalm
+rm -rf $PPATH/bin/essAuxMFCompressC
+rm -rf $PPATH/bin/essAuxMFCompressD
 make -f $PPATH/dependencies/mfc1.01/Makefile.linux clean
 
 cd src/ ; make ; cd ../
@@ -69,9 +69,8 @@ cd dsk
 sh INSTALL
 failureMessage "DSK installation"
 echo $PWD
-ln build/bin/dsk ../../aux/essAuxDsk
-ln build/bin/dsk2ascii ../../aux/essAuxDsk2ascii
-
+mv build/bin/dsk ../../bin/essAuxDsk
+mv build/bin/dsk2ascii ../../bin/essAuxDsk2ascii
 
 echo "Now installing BCALM........"
 cd ../../
@@ -82,17 +81,21 @@ mkdir build;  cd build;  cmake ..;
 failureMessage cmake
 make -j 8 #after this we are inside build
 failureMessage "BCALM installation"
-ln bcalm ../../../aux/essAuxBcalm
+mv bcalm ../../../bin/essAuxBcalm
 
 echo "Now installing MFCompress........"
 cd ../../../
 cd dependencies/mfc1.01/
 make -f Makefile.linux
 failureMessage "MFC installation"
-ln MFCompressC ../../aux/essAuxMFCompressC
-ln MFCompressD ../../aux/essAuxMFCompressD
+mv MFCompressC ../../bin/essAuxMFCompressC
+mv MFCompressD ../../bin/essAuxMFCompressD
+make -f Makefile.linux clean
 
 cd ../../
+rm -rf dependencies/dsk
+rm -rf dependencies/bcalm
+
 #export PATH="$PWD/bin:$PATH"
 
 echo "ESS-Compress v2.0 installation (from source) was successful!!"

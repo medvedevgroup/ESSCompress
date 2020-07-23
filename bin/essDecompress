@@ -48,7 +48,7 @@ failureMessage(){
    fi
 }
 #set -e
-PPATH=$(abspath $(dirname $0))
+PPATH="$(abspath $(dirname $0))/../"
 
 if [[ -z "$1" ]]; then
     Help
@@ -68,7 +68,7 @@ input_directory=$(dirname $INPUTFILE)
 
 ENAME=$(basename $INPUTFILE .essc)
 ENAME="$ENAME.essd"
-$PPATH/aux/essAuxMFCompressD $INPUTFILE 
+$PPATH/bin/essAuxMFCompressD $INPUTFILE 
 x=$(echo $?)
 if [ $x -eq 0 ]
    then
@@ -93,12 +93,12 @@ cd $TMPDIRNAME
 
 if [[ "$ISTIP" -eq "1" ]]; then
     cat $MFCDFILE | tr "a" "{" | tr "c" "}" | tr "g" "(" | tr "t" ")" | awk -F=' ' '{print ""$1}' > $ENAME
-    $PPATH/aux/essAuxDecompress $ENAME 
+    $PPATH/bin/essAuxDecompress $ENAME 
     failureMessage "ESS-Decompress (core algorithm)"
     mv kmers.esstip.spss ../$ENAME 
 else
     cat $MFCDFILE | tr "a" "+" | tr "c" "-" | tr "g" "[" | tr "t" "]" | awk -F=' ' '{print ""$1}' > $ENAME
-    $PPATH/aux/essAuxDecompress $ENAME 
+    $PPATH/bin/essAuxDecompress $ENAME 
     failureMessage "ESS-Decompress (core algorithm)"
     mv kmers.ess.spss ../$ENAME 
 fi
