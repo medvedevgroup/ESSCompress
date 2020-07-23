@@ -1,36 +1,57 @@
 #!/bin/bash
+#Last modified: Jul 23, 6 AM
+
+set -e
 
 failureMessage(){
    if [ $? -eq 0 ]
    then
-      echo "----------------------------"
+      #echo "----------------------------"
       echo "$1 completed successfully."
-      echo "----------------------------"
+      #echo "----------------------------"
    else
-      echo "----------------------------"
+      #echo "----------------------------"
       echo "$1 FAILED."
-      echo "----------------------------"
+      #echo "----------------------------"
       exit
    fi
 }
 
+function abspath {
+    if [[ -d "$1" ]]
+    then
+        pushd "$1" >/dev/null
+        pwd
+        popd >/dev/null
+    elif [[ -e "$1" ]]
+    then
+        pushd "$(dirname "$1")" >/dev/null
+        echo "$(pwd)/$(basename "$1")"
+        popd >/dev/null
+    else
+        echo "$1" does not exist! >&2
+        return 127
+    fi
+}
 
-set -e
+PPATH=$(abspath $(dirname $0))
 
-rm -rf dependencies/bcalm
-rm -rf dependencies/dsk
-rm -rf bin/essC
-rm -rf bin/essD
-rm -rf bin/dsk2asciiESS
-rm -rf bin/dskESS
-rm -rf bin/bcalmESS
-rm -rf bin/mfcESS
-rm -rf bin/mfcdESS
+cd $PPATH/
 
-make
+rm -rf $PPATH/dependencies/bcalm
+rm -rf $PPATH/dependencies/dsk
+rm -rf $PPATH/aux/essAuxCompress
+rm -rf $PPATH/aux/essAuxDecompress
+rm -rf $PPATH/aux/essAuxDsk
+rm -rf $PPATH/aux/essAuxDsk2ascii
+rm -rf $PPATH/aux/essAuxBcalm
+rm -rf $PPATH/aux/essAuxMFCompressC
+rm -rf $PPATH/aux/essAuxMFCompressD
+make -f $PPATH/dependencies/mfc1.01/Makefile.linux clean
 
-echo "ESS-Compress core program is successfully installed."
-echo "Now installing third party softwares (note that: you can skip the rest of the steps and still try out our tool!)"
+cd src/ ; make ; cd ../
+failureMessage "ESS-Compress core program installation"
+#echo "Now installing third party softwares (note that: you can skip the rest of the steps and still try out our tool!)"
 
 #CMake 3.1+; see http://www.cmake.org/cmake/resources/software.html
 #C++/11 capable compiler (e.g. gcc 4.7+, clang 3.5+, Apple/clang 6.0+).
@@ -46,10 +67,10 @@ git clone --recursive https://github.com/GATB/dsk.git
 # compile the code an run a simple test on your computer
 cd dsk
 sh INSTALL
-failureMessage DSK_installation
+failureMessage "DSK installation"
 echo $PWD
-ln build/bin/dsk ../../bin/dskESS
-ln build/bin/dsk2ascii ../../bin/dsk2asciiESS
+ln build/bin/dsk ../../aux/essAuxDsk
+ln build/bin/dsk2ascii ../../aux/essAuxDsk2ascii
 
 
 echo "Now installing BCALM........"
@@ -60,16 +81,18 @@ cd bcalm
 mkdir build;  cd build;  cmake ..;
 failureMessage cmake
 make -j 8 #after this we are inside build
-failureMessage bcalm_installation
-ln bcalm ../../../bin/bcalmESS
+failureMessage "BCALM installation"
+ln bcalm ../../../aux/essAuxBcalm
 
 echo "Now installing MFCompress........"
 cd ../../../
 cd dependencies/mfc1.01/
 make -f Makefile.linux
-failureMessage MFC_installation
-ln MFCompressC ../../bin/mfcESS
-ln MFCompressD ../../bin/mfcdESS
+failureMessage "MFC installation"
+ln MFCompressC ../../aux/essAuxMFCompressC
+ln MFCompressD ../../aux/essAuxMFCompressD
 
 cd ../../
 #export PATH="$PWD/bin:$PATH"
+
+echo "ESS-Compress v2.0 installation (from source) was successful!!"

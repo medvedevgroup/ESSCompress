@@ -451,7 +451,7 @@ public:
         
         delete [] p_dfs;
         delete [] saturated;
-        cout<<"Done. DFS time: "<<readTimer() - time_a<<" sec"<<endl;
+        if(param.VERBOSE_MODE) cout<<"Done. DFS time: "<<readTimer() - time_a<<" sec"<<endl;
         
         
         /***MERGE START***/
@@ -890,26 +890,20 @@ public:
 
     
     void run(string graph_file_name, int K, bool runFlag = 0){
+        param.VERBOSE_MODE = runFlag;
         //OVERRIDE
-        //cout<<"------------------------------"<<endl;
-        cout<<"Running ESS-Compress v2.0 (TIP-mode)"<<endl;
-        cout<<"------------------------------------"<<endl;
-        
+        if(param.VERBOSE_MODE) cout<<"Running ESS-Compress v2.0 (TIP-mode)"<<endl;
         this->K = K;
         param.UNITIG_FILE = graph_file_name;
         //collectInput(argc, argv, graph_file_name, K, FLG_ABUNDANCE); //input: argc, argv
         
-        //cout<<"--------------------"<<endl;
-        cout << "[1] Please wait input file is being loaded... " << graph_file_name << ": k = "<<K<<endl;
-        cout<<".........................."<<endl;
+        if(param.VERBOSE_MODE) cout << "[1] Please wait input file is being loaded... " << graph_file_name << ": k = "<<K<<endl;
         double startTime = readTimer();
         
         readUnitigFile(graph_file_name, unitigs, adjList); //input: graph_filename, output: last 2
         
         double TIME_READ_SEC = readTimer() - startTime;
-        //cout<<".........................."<<endl;
-        cout<<"Done. TIME to read file "<<TIME_READ_SEC<<" sec."<<endl;
-        cout<<"--------------------"<<endl;
+        if(param.VERBOSE_MODE) cout<<"Done. TIME to read file "<<TIME_READ_SEC<<" sec."<<endl;
         
         //initialization phase
         param.OUTPUT_FILENAME = "kmers.esstip";
@@ -950,15 +944,11 @@ public:
         }
         
         
-        //cout<<"--------------------"<<endl;
-        cout<<"[2] Please wait while number of dead-ends are being counted... "<<endl;
-        //cout<<".........................."<<endl;
+        if(param.VERBOSE_MODE) cout<<"[2] Please wait while number of dead-ends are being counted... "<<endl;
         double time_a = readTimer();
         degreePopulate();
-        //cout<<".........................."<<endl;
-        cout<<"Done. TIME to count the nodes in unitig graph: "<<readTimer() - time_a<<" sec."<<endl;
-        cout<<"--------------------"<<endl;
-        
+        if(param.VERBOSE_MODE) cout<<"Done. TIME to count the nodes in unitig graph: "<<readTimer() - time_a<<" sec."<<endl;
+
 
          stat.statPrinter(globalStatFile, "K", K);
          stat.statPrinter(globalStatFile, "N_KMER", stat.nKmers);
@@ -970,17 +960,17 @@ public:
          //##################################################//
          
          //DFS
-         cout<<"[3] DFS algorithm for stitching unitigs is running... "<<endl;
+         if(param.VERBOSE_MODE) cout<<"[3] DFS algorithm for stitching unitigs is running... "<<endl;
          sorter = this->sorterMaker();
         
          
          time_a = readTimer();
          
-         if(runFlag==1){
-             return;
-         }
+        //  if(runFlag==1){
+        //      return;
+        //  }
          
-         cout<<"[4] Writing strings to disk.... "<<endl;
+         if(param.VERBOSE_MODE) cout<<"[4] Writing strings to disk.... "<<endl;
          this->ustOutputToDisk(sorter);
         
         //VALIDATION
@@ -1007,7 +997,7 @@ public:
          }
         
         
-         cout<<"Done. TIME to output: "<<readTimer() - time_a<<" sec."<<endl;
+         if(param.VERBOSE_MODE) cout<<"Done. TIME to output: "<<readTimer() - time_a<<" sec."<<endl;
          double TIME_TOTAL_SEC = readTimer() - startTime;
          
          
@@ -1033,13 +1023,12 @@ public:
          
          globalStatFile.close();
          
-        cout << "------ End of ESS-Compress (TIP mode) core : Success! ------"<<endl;
+        if(param.VERBOSE_MODE) cout << "------ End of ESS-Compress (TIP mode) core : Success! ------"<<endl;
         //Output is in file "<<param.OUTPUT_FILENAME <<
          cout << "Total number of unique "<<K<<"-mers " <<  "= " << stat.nKmers << endl;
         
-         cout << "Size of ESS-TIP representation" <<  "= " <<esstipCharPerKmer << " char/k-mer"<< endl;
-        
-         cout << "------------------------------------------------------"<<endl;
+         cout << "Size of ESS-Tip-Compress representation" <<  "= " <<esstipCharPerKmer << " char/k-mer"<< endl;
+
     }
 };
     

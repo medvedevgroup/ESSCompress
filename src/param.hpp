@@ -15,6 +15,7 @@
 using namespace std;
 class Param{
 public:
+    bool VERBOSE_MODE = false;
     bool VALIDATE = false;
     bool PROFILE_AND_STAT = false;
 //    string APP_PATH_DSK="bin/dsk";

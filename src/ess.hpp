@@ -418,7 +418,7 @@ vector<ESS::threetuple> ESS::sorterMaker() {
     delete [] color;
     delete [] p_dfs;
     delete [] saturated;
-    cout<<"Done. DFS time: "<<readTimer() - time_a<<" sec"<<endl;
+    if(param.VERBOSE_MODE) cout<<"Done. DFS time: "<<readTimer() - time_a<<" sec"<<endl;
     
     
     /***MERGE START***/
@@ -627,35 +627,26 @@ public:
 
 
 void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
-    
-    cout<<"Running ESS-Compress v2.0"<<endl;
-    cout<<"-------------------------"<<endl;
+    param.VERBOSE_MODE = runFlag;
+    if(param.VERBOSE_MODE) cout<<"Running ESS-Compress v2.0 (core) "<<endl;
     
     this->K = K;
     param.UNITIG_FILE = graph_file_name;
     //collectInput(argc, argv, graph_file_name, K, FLG_ABUNDANCE); //input: argc, argv
     
-    //cout<<"--------------------"<<endl;
-    cout << "[1] Input file is being loaded.... " << graph_file_name << ": k = "<<K<<endl;
-    cout<<".........................."<<endl;
+    if(param.VERBOSE_MODE) cout << "[1] Input file is being loaded.... " << graph_file_name << ": k = "<<K<<endl;
     double startTime = readTimer();
     
     this->readUnitigFile(param.UNITIG_FILE, unitigs, adjList); //input: graph_filename, output: last 2
     
     double TIME_READ_SEC = readTimer() - startTime;
     //cout<<".........................."<<endl;
-    cout<<"Done. TIME to read file "<<TIME_READ_SEC<<" sec."<<endl;
-    cout<<"--------------------"<<endl;
+    if(param.VERBOSE_MODE) cout<<"Done. TIME to read file "<<TIME_READ_SEC<<" sec."<<endl;
     
     //initialization phase
-    //param.OUTPUT_FILENAME = getFileName(param.UNITIG_FILE)+".ess";
-    //param.OUTPUT_FILENAME = param.UNITIG_FILE+".essc";
     param.OUTPUT_FILENAME = "kmers.ess";
-    
-//    globalStatFile.open(("stat_ess_"+getFileName(param.UNITIG_FILE).substr(0, getFileName(param.UNITIG_FILE).length()-11)+".txt").c_str(), std::fstream::out);
     globalStatFile.open("stat_ess.txt", std::fstream::out);
 
-    
     V_bcalm = adjList.size();
     nodeSign = new bool[V_bcalm];
     oldToNew = new new_node_info_t[V_bcalm];
@@ -668,7 +659,6 @@ void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
         sortStruct[i].sortkey = 0;
         sortStruct[i].node = i;
     }
-    
     
     //stat collector
     stat.E_bcalm = 0;
@@ -685,7 +675,6 @@ void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
     
     stat.V_bcalm = V_bcalm;
     
-   
     stat.statPrinter(globalStatFile, "K", K);
     stat.statPrinter(globalStatFile, "N_KMER", stat.nKmers);
     stat.statPrinter(globalStatFile, "V_BCALM", stat.V_bcalm);
@@ -697,21 +686,21 @@ void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
     //##################################################//
     
     //DFS
-    cout<<"[2] DFS algorithm for stitching unitigs is running... "<<endl;
+    if(param.VERBOSE_MODE) cout<<"[2] DFS algorithm for stitching unitigs is running... "<<endl;
     sorter = this->sorterMaker();
     
     double time_a = readTimer();
     
-    if(runFlag==1){
-        return;
-    }
+    // if(runFlag==1){
+    //     return;
+    // }
     
     
-    cout<<"[3] Starting absorption module... "<<endl;
+    if(param.VERBOSE_MODE) cout<<"[3] Starting absorption module... "<<endl;
     this->absorptionManager();
     
     
-    cout<<"TIME to output: "<<readTimer() - time_a<<" sec."<<endl;
+    if(param.VERBOSE_MODE) cout<<"TIME to output: "<<readTimer() - time_a<<" sec."<<endl;
     double TIME_TOTAL_SEC = readTimer() - startTime;
     
     
@@ -732,7 +721,7 @@ void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
     stat.statPrinter(globalStatFile, "CHAR_PER_KMER_ESS", stat.C_ess*1.0/stat.nKmers);
 
     stat.statPrinter(globalStatFile, "TIME_TOTAL_SEC", TIME_TOTAL_SEC, false);
-    cout<<"Total time for ESS-Compress core: "<<TIME_TOTAL_SEC<<endl;
+    if(param.VERBOSE_MODE) cout<<"Total time for ESS-Compress core: "<<TIME_TOTAL_SEC<<endl;
 
     uint64_t maxulen = maximumUnitigLength();
     stat.statPrinter(globalStatFile, "MAX_UNITIG_LEN_MB", maxulen*1.0/1024.0/1024.0);
@@ -740,10 +729,9 @@ void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
     stat.statPrinter(globalStatFile, "V_MB", stat.V_bcalm*8.0/1024.0/1024.0);
     
     
-    cout << "------------ End of ESS-Compress (core) : Success" << " ------------"<<endl;
+    if(param.VERBOSE_MODE) cout << "------------ End of ESS-Compress (core) : Success" << " ------------"<<endl;
     cout << "Total number of unique "<<K<<"-mers " <<  "= " << stat.nKmers << endl;
-    cout << "Size of ESS representation = "<< stat.C_ess*1.0/stat.nKmers <<" char/k-mer" << endl;
-    cout << "------------------------------------------------------"<<endl;
+    cout << "Size of ESS-Compress representation = "<< stat.C_ess*1.0/stat.nKmers <<" char/k-mer" << endl;
     
     
     if(param.VALIDATE){
@@ -1775,13 +1763,13 @@ void AbsorbGraph::absorptionManager() {
     sorterIndexAndAbsorbGraphMaker();//sorter, sorterIndexMap, absorbGraph, absorbedCategory
     //makeGraphDotAbsorb(absorbGraph);
 
-    cout<<"[4] Removing cycles from absorption graph (forest construction step)..."<<endl;
+    if(param.VERBOSE_MODE) cout<<"[4] Removing cycles from absorption graph (forest construction step)..."<<endl;
     removeCycleFromAbsorbGraph();//sorter,  sorterIndexMap, absorbGraph, absorbGraphCycleRemoved,  orderOfUnitigs,  absorbedCategory, last two are output
-    cout<<"Done!"<<endl;
+    if(param.VERBOSE_MODE) cout<<"Done!"<<endl;
 
-    cout<<"[5] Spelling paths and dumping them to disk...";
+    if(param.VERBOSE_MODE) cout<<"[5] Spelling paths and dumping them to disk...";
     tipAbsorbedOutputter(); //sorter, sorterIndexMap, absorbGraphCycleRemoved, orderOfUnitigs, absorbedCategory
-    cout<<"Done!"<<endl;
+    if(param.VERBOSE_MODE) cout<<"Done!"<<endl;
 
 }
 
@@ -1888,13 +1876,8 @@ queue<unitig_t> AbsorbGraph::printSCCs()
 //        uidorder = later;
         map<unitig_t, unitig_t> checkdup;
 
-        //cout<<"UIDORDER SIZE: "<<uidorder.size() <<"\n"<<endl;
-        //assert(uidorder.size() == V_bcalm);
 
-        //cout<<"number of SCC: "<<countSCC<<endl;
-
-        //cout<<"... Done."<<endl;
-        cout<<"Number of strings in ESS-Compress representation: "<<lowerbound<<endl;
+        if(param.VERBOSE_MODE) cout<<"Number of strings in ESS-Compress representation: "<<lowerbound<<endl;
         stat.absorbGraphNumCC_endAbosrb = lowerbound;
         delete[] outdeg;
     }

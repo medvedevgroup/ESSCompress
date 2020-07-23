@@ -1,0 +1,362 @@
+#!/bin/bash
+#Last modified: Jul 23, 9 AM
+
+DDEBUG=0
+TMPDIRNAME=$(echo "tmp_ess_$(date +"%s")")
+VERBOSEMODE=0
+input_directory=""
+
+isVerboseMode () {
+   [[ VERBOSEMODE -eq 1 ]]
+}
+
+
+
+function abspath {
+    if [[ -d "$1" ]]
+    then
+        pushd "$1" >/dev/null
+        pwd
+        popd >/dev/null
+    elif [[ -e "$1" ]]
+    then
+        pushd "$(dirname "$1")" >/dev/null
+        echo "$(pwd)/$(basename "$1")"
+        popd >/dev/null
+    else
+        echo "$1" does not exist! >&2
+        return 127
+    fi
+}
+
+PPATH=$(abspath $(dirname $0))
+
+Help()
+{
+   # Display Help
+   #echo "Description of the script functions here."
+   #echo
+   echo "Syntax: ./essCompress [parameters] "
+   echo "mandatory arguments:"
+   echo "-i [filepath]     Full path for input file."
+   echo "-k [INT]          k-mer size (must be >=4)"
+   echo "optional arguments:"
+   echo "-a [INT]          DEFAULT=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out. "
+   echo "-f		            Fast compression mode: uses less memory, but achieves smaller compression ratio."
+   echo "-h                Print this Help."
+   echo "-v                Enable verbose mode: print more useful information."
+   echo "-c                Verify correctness: check that all the distinct k-mers in the input file appears exactly once in compressed file."
+   echo
+   exit
+}
+  
+
+
+Version()
+{
+   echo "ESS-Compress v2.0"
+}
+
+################################################################################
+# Function to validate that output represents the k-mers in the fasta file
+################################################################################
+validate(){
+   K=$1
+   UNITIG_FILE=$2
+   DECOMPRESSED_FILE=$3
+   echo "-------"
+   echo "Verifying correctness of ESS-Compress core algorithm...";
+   $PPATH/aux/essAuxDsk -file $UNITIG_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out unitigs.h5
+   $PPATH/aux/essAuxDsk -file $DECOMPRESSED_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out spss.h5
+   $PPATH/aux/essAuxDsk2ascii -file unitigs.h5 -out unitigs.txt  -verbose 0
+   $PPATH/aux/essAuxDsk2ascii -file spss.h5 -out spss.txt  -verbose 0
+   #echo "doing highly  accurate validation................"
+   #echo "Sorting k-mers for validation................"
+   #sort -k 1 -n unitigs.txt -o sorted_unitigs.txt; sort -k 1 -n spss.txt -o sorted_spss.txt
+   sort unitigs.txt -o sorted_unitigs.txt; sort spss.txt -o sorted_spss.txt
+   
+   
+   cmp sorted_unitigs.txt sorted_spss.txt && echo '### SUCCESS: Input and output contain same k-mers! ###' || echo '### WARNING: Input and output contain different k-mers! ###'
+
+   if [[ DDEBUG -eq 0 ]];  then
+    rm -rf sorted_spss.txt spss.txt unitigs.txt unitigs.h5 spss.h5
+    rm -rf sorted_unitigs.txt
+   fi
+   
+}
+
+################################################################################
+# Function to compute k-mers (DSK) and cdbg (bcalm2)
+################################################################################
+essCompress_prior(){
+   #assume we are in the correct directory
+   L=$1
+   K=$2
+   A=$3
+   TYPE=$4
+   KMERS_FA=kmers.fa
+   L=$(abspath $L)
+
+   ## get unitigs
+   if [ "$K" -gt "10" ]; then
+      if [[ VERBOSEMODE -eq 0 ]]; then
+            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/aux/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 0 > bcalm_output
+      else
+            echo "Running BCALM2 to get compacted de Bruijn graph..."
+            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/aux/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 0
+      fi
+      
+       
+   elif [ "$K" -gt "3" ]; then
+      if [[ VERBOSEMODE -eq 0 ]]; then
+            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/aux/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -minimizer-size 2 -verbose 0 > bcalm_output
+      else
+            echo "Running BCALM2 to get compacted de Bruijn graph..."
+            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/aux/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -minimizer-size 2 -verbose 0
+      fi
+
+   else
+      echo "This program does not support k-mer size smaller than 4"
+      exit
+   fi
+   failureMessage BCALM2
+   rm -rf *.glue* *.h5 trashme*
+}
+
+#step 1
+essCompress_main(){
+   L=$1
+   K=$2
+   A=$3
+   TYPE=$4
+   O=$5 #output directory and name specified
+
+   STREXT=".essc"
+   STREXTD=".essd"
+
+   L=$(abspath $L)
+   O2=$(dirname $L)  
+   FULLFINALMFC=$(echo $O$STREXT)
+   FULLFINALMFCD=$(echo $O$STREXTD)
+   KMERS_FA=$L
+
+
+   cd $O2  #this is inside tmp_ess/
+
+   /usr/bin/time  -f "%M\t%e" --output-file=mem_ess_$TYPE $PPATH/aux/essAuxCompress -i $L -k $K -t $TYPE -v $VERBOSEMODE
+   failureMessage "ESS-Compress core"
+
+   if [[ "$TYPE" -eq "0" ]]; then
+      cat kmers.ess | tr "[" "g" | tr "]" "t" | tr "+" "a" | tr "-" "c" | awk -F=' ' '{print ""$1}' > kmers_acgt.ess
+      var=$(echo ">2.0\_$K\_0") ;  sed -i "1s/.*/$var/" kmers_acgt.ess
+      /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE $PPATH/aux/essAuxMFCompressC kmers_acgt.ess
+      failureMessage MFC
+      mv kmers_acgt.ess.mfc $FULLFINALMFC
+
+      echo "Output is in '$FULLFINALMFC'".
+   elif [[ "$TYPE" -eq  "1" ]]; then
+      cat kmers.esstip | tr "{" "a" | tr "}" "c" | tr "(" "g" | tr ")" "t" | awk -F=' ' '{print ""$1}' > kmers_acgt.esstip
+      var=$(echo ">2.0\_$K\_1") ;  sed -i "1s/.*/$var/" kmers_acgt.esstip
+      /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE $PPATH/aux/essAuxMFCompressC kmers_acgt.esstip
+      failureMessage MFC
+      mv kmers_acgt.esstip.mfc $FULLFINALMFC
+
+      echo "Output is in '$FULLFINALMFC'".
+   else
+      mv kmers.ust.spss $FULLFINALMFCD
+
+      echo "Output is in '$FULLFINALMFCD'".
+   fi
+
+   #validate
+   if [[ $validateset -eq 1 ]]; then
+
+      if [[ "$TYPE" -eq "0" ]]; then
+
+         var=$(echo ">2.0\_$K\_0") ; sed -i "1s/.*/$var/" kmers.ess
+         /usr/bin/time  -f "%M\t%e" --output-file=mem_dec_$TYPE $PPATH/aux/essAuxDecompress kmers.ess
+
+         validate $K $KMERS_FA kmers.ess.spss
+
+      elif [[ "$TYPE" -eq  "1" ]]; then
+
+         var=$(echo ">2.0\_$K\_1") ;  sed -i "1s/.*/$var/" kmers.esstip
+         /usr/bin/time  -f "%M\t%e" --output-file=mem_dec_$TYPE $PPATH/aux/essAuxDecompress kmers.esstip
+
+         validate $K $KMERS_FA kmers.esstip.spss
+      else
+         /usr/bin/time  -f "%M\t%e" --output-file=mem_mfc_$TYPE $PPATH/aux/essAuxMFCompressC kmers.ust.spss
+         validate $K $KMERS_FA kmers.ust.spss
+      fi
+
+   fi
+   
+   cd $O2
+   cd ../
+
+   if [[ DDEBUG -eq 0 ]];  then
+    rm -rf tmp_ess
+   fi
+
+   
+}
+
+countNonDNA(){
+   cat $1 |  grep -v '>' | grep -o "[acgt]" | wc | awk '{print $3-$1}'
+}
+
+countDNA(){
+   cat $1 |  grep -v '>' | grep -o "[ACGT]" | wc | awk '{print $3-$1}'
+}
+
+failureMessage(){
+   if [ $? -eq 0 ]
+   then
+      #echo "----------------------------"
+      isVerboseMode && echo "$1 completed successfully."
+      #echo "----------------------------"
+   else
+      #echo "----------------------------"
+      echo "$1 FAILED." 
+      rm -rf $input_directory/$TMPDIRNAME
+      #echo "----------------------------"
+      exit
+   fi
+}
+
+
+################################################################################
+################################################################################
+# Main program                                                                 #
+################################################################################
+fastaORcdbgset=0
+modeset=0
+outdirset=0
+inputset=0
+validateset=0
+fastmode=0
+#verbosemode=0
+################################################################################
+K=0
+A=1
+MODE=0
+################################################################################
+################################################################################
+# Process the input options. Add options as needed.                            #
+################################################################################
+# Get the options
+while getopts "vhfck:i:a:o:" option; do
+   case $option in
+      h) # display Help
+         Help
+         exit;;
+      c) validateset=1
+         ;;
+      v)
+         #verbosemode=1
+         VERBOSEMODE=1
+         ;;
+      k) K=$OPTARG
+         ;;
+         #exit;;
+      a) A=$OPTARG
+         ;;
+         #exit;;
+      # m) MODE=$OPTARG
+      #   [[ ! $MODE =~ 0|1|2 ]] && {
+      #       echo "Incorrect options provided, use either 0 (ess), or 1 (ess-tip) or 2 (spss)"
+      #       exit 1
+      #   }
+      #   modeset=1
+      #   ;;
+
+      f) #
+        fastmode=1
+        MODE=1
+        ;;
+      # s) #
+      #   MODE=2
+      #   ;;
+      # t) fastaORcdbg=$OPTARG
+      #   [[ ! $fastaORcdbg =~ 0|1 ]] && {
+      #       echo "Incorrect options provided, use either 0 (fasta/q), or 1 (cdbg)"
+      #       exit 1
+      #   }
+      #   fastaORcdbgset=1
+      #   ;;
+      i) INPUTFILE=${OPTARG}
+         inputset=1
+         if [ ! -f "$INPUTFILE" ]; then
+            echo "'$INPUTFILE' is not a valid file."
+            exit 2
+         fi
+         ;;
+      # o) OUTDIR=${OPTARG}
+      #    outdirset=1
+      #    ;;
+     \?) # incorrect option
+         echo "Error: Invalid option,  Use -h for help."
+         exit;;
+   esac
+done
+
+if [[ -z $1 ]]; then
+   Help
+fi
+
+if [[ K -eq 0 ]]; then
+    echo "You must specify a valid value for k-mer size [-k]. Use -h for help."
+    Help
+    exit 2
+fi
+
+if [[ inputset -eq 0 ]]; then
+    echo "You must specify a valid input file [-i]. Use -h for help."
+    Help
+    exit 2
+fi
+
+# if [[ outdirset -eq 0 ]]; then
+#     echo "You must specify output directory. Use -h for help."
+#     exit 2
+# fi
+
+# if [[ modeset -eq 0 ]]; then
+#     echo "You must specify compression mode [-m]. Use -h for help."
+#     exit 2
+# fi
+
+fastaORcdbg=0
+if [[ fastaORcdbg -eq 0 ]]; then
+    Version
+
+    input_abspa=$(abspath $INPUTFILE)  #absolute path: (i.e. /s/rhodo/list_reads)
+    input_directory=$(dirname $input_abspa) #get the directory of input file (i.e. /s/rhodo/)
+    
+    if [[ outdirset -eq 0 ]]; then
+      OUTDIR=$(dirname $input_abspa) #set the output directory same as that of input file (i.e. /s/rhodo/)
+    fi
+
+   cd $OUTDIR
+   
+   
+   mkdir -p $TMPDIRNAME
+   cd $TMPDIRNAME
+   #mkdir -p tmp_ess
+   #cd tmp_ess
+
+   essCompress_prior $input_abspa $K $A $MODE 
+   essCompress_main $input_directory/$TMPDIRNAME/kmers.unitigs.fa $K $A $MODE "$OUTDIR/$(basename "$input_abspa")"
+   #rm -rf tmp_ess    
+   rm -rf $TMPDIRNAME
+fi
+
+
+# if [[ fastaORcdbg -eq 1 ]]; then
+#    input_abspa=$(abspath $INPUTFILE)
+#    input_directory=$(dirname $input_abspa)
+#    OUTDIR=$(dirname $input_abspa)
+#    OUTDIR="$OUTDIR/$(basename "$input_abspa")"
+#    aux/essAuxCompressompress_main $input_abspa $K $A $MODE $OUTDIR
+# fi
+
