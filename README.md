@@ -142,9 +142,11 @@ The compressed output is in a file with `.essc` extension.
 
 Download source and install:
 
-       git clone https://github.com/medvedevgroup/ESSCompress
-       cd ESSCompress
-       ./INSTALL
+```
+git clone https://github.com/medvedevgroup/ESSCompress
+cd ESSCompress
+./INSTALL
+```
 
 Upon successful execution of this script, you will see linux binaries for [BCALM](https://github.com/GATB/bcalm) (`essAuxBcalm`), [DSK](https://github.com/GATB/dsk) (`essAuxDsk` and `essAuxDsk2ascii`) and [MFCompress](http://bioinformatics.ua.pt/software/mfcompress/) (`essAuxMFCompressC` and `essAuxMFCompressD`) in the `aux` folder, along with `essAuxValidate`, `essAuxCompress` and `essAuxDecompress`.
 
