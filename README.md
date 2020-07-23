@@ -19,7 +19,7 @@ If you prefer to install from source, see [below](#Installation-from-source).
 
 # Quick start 
 
-We illustrate the usage of ESS with an example. Please change into the base directory of the ESS installation. If you have just installed ESS, you can do this by `cd essCompress-v2.0`. The distribution contains a small example fasta file:
+We illustrate the usage of ESS with an example. Please change into the base directory of the ESS installation. If you have just finished downloading and extracting ESS, you can do this by `cd essCompress-v2.0`. The distribution contains a small example fasta file:
 ```
 $cat examples/smallExample.fa
 >
@@ -51,9 +51,9 @@ Checking whether file 'examples/smallExample.fa' and file 'examples/smallExample
 ```
 
 
-## Usage details
+# Usage details
 
-### essCompress: compression of a k-mer set
+## essCompress: compression of a k-mer set
 
        Syntax: ./essCompress [parameters]   
 
@@ -68,7 +68,7 @@ Checking whether file 'examples/smallExample.fa' and file 'examples/smallExample
 	   -h                Print this Help.
 
 
-#### Input for essCompress
+### Input for essCompress
 
 Two important input parameters are
 * input [-i]   
@@ -91,14 +91,14 @@ ESS-Compress uses BCALM 2 under the hood, which does not care about paired-end i
 
 
 
-#### Output for essCompress
+### Output for essCompress
 The compressed output is in a file with `.essc` extension.
 
 
 
 
 
-### essDecompress: decompression of .essc file
+## essDecompress: decompression of .essc file
 
         Syntax: ./essDecompress [file_to_decompress]
 
@@ -106,9 +106,9 @@ The compressed output is in a file with `.essc` extension.
 *Output*: a fasta file with *.essd* extension, where all the distinct k-mers represented by the input .essc file appear exactly once. In other words, output is a [spectrum-preserving string set](http://doi.org/10.1007/978-3-030-45257-5_10).
 
 
-## Installation from source
+# Installation from source
 
-### Pre-requisites
+## Pre-requisites
 - Linux operating system (64 bit)
 
 - Git
@@ -117,7 +117,7 @@ The compressed output is in a file with `.essc` extension.
 
 - CMake 3.1+   
 
-### Steps
+## Steps
 
 Download source and install:
 
@@ -130,8 +130,7 @@ cd ESSCompress
 Upon successful execution of this script, you will see linux binaries for [BCALM](https://github.com/GATB/bcalm) (`essAuxBcalm`), [DSK](https://github.com/GATB/dsk) (`essAuxDsk` and `essAuxDsk2ascii`) and [MFCompress](http://bioinformatics.ua.pt/software/mfcompress/) (`essAuxMFCompressC` and `essAuxMFCompressD`) in the `bin` folder, along with `essAuxValidate`, `essAuxCompress` and `essAuxDecompress`. All of these are auxiliary executables. The main two executables are `essCompress` and `essDecompress`.
 
 
-
-## Citation
+# Citation
 
 If using ESS-Compresss in your research, please cite
 * Amatur Rahman, Rayan Chikhi and Paul Medvedev, Disk compression of k-mer sets, WABI 2020.
