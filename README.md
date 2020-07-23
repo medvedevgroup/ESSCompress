@@ -97,7 +97,7 @@ cd ESSCompress
 
 Upon successful execution of this script, you will see linux binaries for [BCALM](https://github.com/GATB/bcalm) (`essAuxBcalm`), [DSK](https://github.com/GATB/dsk) (`essAuxDsk` and `essAuxDsk2ascii`) and [MFCompress](http://bioinformatics.ua.pt/software/mfcompress/) (`essAuxMFCompressC` and `essAuxMFCompressD`) in the `bin` folder, along with `essAuxValidate`, `essAuxCompress` and `essAuxDecompress`. All of these are auxiliary executables. The main two executables are `essCompress` and `essDecompress`.
 
-To check that you have properly installed ESS, please try to compress a small file in [Usage detail](#Usage-detail)
+To check that you have properly installed ESS, please try to compress a small file in the [Usage details](#Usage-details) section.
 
 
 # Citation
