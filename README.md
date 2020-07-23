@@ -26,7 +26,7 @@ A tool to compress a set of k-mers represented in FASTA/FASTQ file(s).
 
 ## Quick start with a step-by-step example
 
-*This example assumes that you are currently inside the base directory `essCompress-v2.0` after you have completed installing the tool as per the the instructions.*
+*This example assumes that you are currently inside the base directory `essCompress-v2.0` after you have completed installing the tool as per the instructions.*
 
 Lets say you have a small fasta file of sequences, i.e. examples/smallExample.fa, and   
 `cat examples/smallExample.fa` returns
