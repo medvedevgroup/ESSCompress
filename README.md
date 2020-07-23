@@ -77,17 +77,15 @@ If they contain the same k-mers (i.e. 11-mers), you will see an output like this
 
        Syntax: ./essCompress [parameters]   
 
-       mandatory parameters:  
-       -i [filepath]     Full path for input file.        
-	   -k [INT]          k-mer size (must be >=4)
+	   -k [int]          k-mer size (must be >=4)
+	   -i [input-file]   Path to input file. 
 
-	   optional parameters:  
-	   -a [INT]          DEFAULT=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out.   
-	   -f		     Fast compression mode: uses less memory, but achieves smaller compression ratio.
-	   -h                Print this Help.
+	   optional arguments:
+	   -a [int]          Default=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out.
+	   -f                Fast compression mode: uses less memory, but achieves smaller compression ratio.
 	   -v                Enable verbose mode: print more useful information.
-	   -c                Verify correctness: check that all the distinct k-mers in the input file appears exactly once in the compressed output file.
-
+	   -c                Verify correctness: check that all the distinct k-mers in the input file appears exactly once in compressed file.
+	   -h                Print this help.
 
 
 #### Input for essCompress
