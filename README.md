@@ -78,7 +78,7 @@ If they contain the same k-mers (i.e. 11-mers), you will see an output like this
        Syntax: ./essCompress [parameters]   
 
 	   -k [int]          k-mer size (must be >=4)
-	   -i [input-file]   Path to input file. 
+	   -i [input-file]   Path to input file.
 
 	   optional arguments:
 	   -a [int]          Default=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out.
@@ -96,7 +96,7 @@ Two important input parameters are
 
 File input format can be   
 	1. a single fasta or fastq file (either gzipped or not)   
-	2. a text file containing the list of multiple fasta/fastq files (one file per line)	 
+	2. a single text file containing the list of multiple fasta/fastq files (one file per line)	 
 
 To pass a single file as input and compress: `./essCompress -i examples/11mers.fa -k 11`
 
