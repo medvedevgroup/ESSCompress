@@ -1,33 +1,23 @@
-# ESSCompress v2.0
+ESSCompress
+===============
 
 A tool to compress a set of k-mers represented in FASTA/FASTQ file(s).
 
 
-## Installation
+# Installation
 
-### Requirements
+The easist way to install ESS is to download and extract the latest Linux 64-bit [binaries](https://github.com/medvedevgroup/ESSCompress/releases/download/v2.0/essCompress-v2.0-linux-64.tar.gz).
 
-- Linux operating system (64 bit)
+```
+wget https://github.com/medvedevgroup/ESSCompress/releases/download/v2.0/essCompress-v2.0-linux-64.tar.gz
+tar xvzf essCompress-v2.0-linux-64.tar.gz
+```
 
-### Steps
+The executable files are now located in the bin `essCompress-v2.0/bin`, relative to the working directory. Optionally, you can add this directory to your PATH variable or move all the files from this directory into another directory in your path.
 
-1. Download the latest Linux 64-bit [binaries](https://github.com/medvedevgroup/ESSCompress/releases/download/v2.0/essCompress-v2.0-linux-64.tar.gz).   
-`wget https://github.com/medvedevgroup/ESSCompress/releases/download/v2.0/essCompress-v2.0-linux-64.tar.gz`
+If you prefer to install from source, see [below](##Installation-from-source).
 
-2. Extract the `.tar.gz` file and change into uncompressed directory.   
-`tar xvzf essCompress-v2.0-linux-64.tar.gz`   
-`cd essCompress-v2.0/`
-
-
-3. You will see two executables in the directory named `essCompress` and `essDecompress`.
-
-	- You can either refer to these two executables
-	directly when compressing/decompressing (using the command `./essCompress` and `./essDecompress`),
-
-	- Or, you can move/copy the executables in `essCompress-v2.0/bin` to the `bin` directory that is already in your PATH. For instance, considering `/usr/bin` is already in PATH, you need to run the command `mv ess* /usr/bin` to move all executables for ESS-Compress software. An alternative to moving/copying executables is adding the location of `essCompress-v2.0/bin` to your PATH.
-
-
-## Quick start with a step-by-step example
+# Quick start 
 
 *This example assumes that you are currently inside the base directory `essCompress-v2.0` after you have completed installing the tool as per the instructions.*
 
