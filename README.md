@@ -15,7 +15,7 @@ tar xvzf essCompress-v2.0-linux-64.tar.gz
 
 The executable files are now located in the bin `essCompress-v2.0/bin`, relative to the working directory. Optionally, you can add this directory to your PATH variable or move all the files from this directory into another directory in your path.
 
-If you prefer to install from source, see [below](##Installation-from-source).
+If you prefer to install from source, see [below](#Installation-from-source).
 
 # Quick start 
 
