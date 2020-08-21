@@ -61,10 +61,14 @@ The options for essCompress are
 
 	   optional arguments:
 	   -a [int]          Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out (default = 1).
+	   -o [output-dir]   Specify output directory
 	   -f                Fast mode. It can be twice as fast and use several times less RAM, at the cost of a smaller compression ratio (usually 10% more space).
+	   -u                UST mode (output an SPSS, which does not contain any duplicate k-mers and the k-mers it contains are exactly the distinct k-mers in the input. A k-mer and its reverse complement are treated as equal.)
 	   -v                Enable verbose mode: print more useful information.
+	   
 	   -c                Verify correctness after compression. This checks that all the distinct k-mers in the input file appears exactly once in compressed file. K-mers and their reverse complements are treated as equal by ESS.
 	   -h                Print this help.
+	   -V                Print version number.
 
 The output of essCompress is a [spectrum-preserving string set](http://doi.org/10.1007/978-3-030-45257-5_10) representation of the input file. In other words, the output file does not contain any duplicate k-mers and the k-mers it contains are exactly the distinct k-mers in the input. A k-mer and its reverse complement are treated as equal by ESS. To decompress, run `essDecompress [filename.essc]`, where *filename.essc* is the file output by essCompress. 
 
