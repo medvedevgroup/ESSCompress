@@ -892,7 +892,7 @@ public:
     void run(string graph_file_name, int K, bool runFlag = 0){
         param.VERBOSE_MODE = runFlag;
         //OVERRIDE
-        if(param.VERBOSE_MODE) cout<<"Running ESS-Compress v2.0 (TIP-mode)"<<endl;
+        if(param.VERBOSE_MODE) cout<<"Running ESS-Compress (TIP-mode)"<<endl;
         this->K = K;
         param.UNITIG_FILE = graph_file_name;
         //collectInput(argc, argv, graph_file_name, K, FLG_ABUNDANCE); //input: argc, argv

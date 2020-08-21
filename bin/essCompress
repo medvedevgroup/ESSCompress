@@ -1,5 +1,5 @@
 #!/bin/bash
-#Last modified: Jul 23, 11 AM
+#Last modified: Aug 21, 11 AM
 
 DDEBUG=0
 TMPDIRNAME=$(echo "tmp_ess_$(date +"%s")")
@@ -24,7 +24,7 @@ function abspath {
         echo "$(pwd)/$(basename "$1")"
         popd >/dev/null
     else
-        echo "$1" does not exist! >&2
+        echo "$1" is an invalid filename! >&2
         return 127
     fi
 }
@@ -46,10 +46,13 @@ Help()
    echo
    echo "optional arguments:"
    echo "-a [int]          Default=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out. "
+   echo "-o [output-dir]   Specify output directory"
    echo "-f                Fast compression mode: uses less memory, but achieves smaller compression ratio."
+   echo "-u                UST mode (output an SPSS, which does not contain any duplicate k-mers and the k-mers it contains are exactly the distinct k-mers in the input. A k-mer and its reverse complement are treated as equal.)"
    echo "-v                Enable verbose mode: print more useful information."
    echo "-c                Verify correctness: check that all the distinct k-mers in the input file appears exactly once in compressed file."
-   echo "-h                Print this Help."
+   echo "-h                Print this Help"
+   echo "-V                Print version number"
    echo
    exit
 }
@@ -58,7 +61,7 @@ Help()
 
 Version()
 {
-   echo "ESS-Compress v2.0"
+   echo "ESS-Compress v2.1"
 }
 
 ################################################################################
@@ -221,7 +224,7 @@ failureMessage(){
       #echo "----------------------------"
    else
       #echo "----------------------------"
-      echo "$1 FAILED."
+      echo "$1 FAILED. Run with -v flag to get potentially more information on the cause of failure."
       rm -rf $input_directory/$TMPDIRNAME
       #echo "----------------------------"
       exit
@@ -239,6 +242,7 @@ outdirset=0
 inputset=0
 validateset=0
 fastmode=0
+spssmode=0
 #verbosemode=0
 ################################################################################
 K=0
@@ -249,8 +253,11 @@ MODE=0
 # Process the input options. Add options as needed.                            #
 ################################################################################
 # Get the options
-while getopts "vhfck:i:a:o:" option; do
+while getopts "vVhufck:i:a:o:" option; do
    case $option in
+      u) spssmode=1
+         MODE=2
+         ;;
       h) # display Help
          Help
          exit;;
@@ -295,9 +302,13 @@ while getopts "vhfck:i:a:o:" option; do
             exit 2
          fi
          ;;
-      # o) OUTDIR=${OPTARG}
-      #    outdirset=1
-      #    ;;
+      o) OUTDIR=${OPTARG}
+         outdirset=1
+         ;;
+      V) 
+         Version
+         exit 
+         ;;
      \?) # incorrect option
          echo "Error: Invalid option,  Use -h for help."
          exit;;
@@ -338,21 +349,40 @@ if [[ fastaORcdbg -eq 0 ]]; then
     input_directory=$(dirname $input_abspa) #get the directory of input file (i.e. /s/rhodo/)
 
     if [[ outdirset -eq 0 ]]; then
+      
       OUTDIR=$(dirname $input_abspa) #set the output directory same as that of input file (i.e. /s/rhodo/)
+    
+      cd $OUTDIR
+
+      mkdir -p $TMPDIRNAME
+      cd $TMPDIRNAME
+      #mkdir -p tmp_ess
+      #cd tmp_ess
+
+      essCompress_prior $input_abspa $K $A $MODE
+      essCompress_main $input_directory/$TMPDIRNAME/kmers.unitigs.fa $K $A $MODE "$OUTDIR/$(basename "$input_abspa")"
+      #rm -rf tmp_ess
+      rm -rf $TMPDIRNAME
     fi
 
-   cd $OUTDIR
 
+   if [[ outdirset -eq 1 ]]; then
+      OUTDIR=$(abspath $OUTDIR)
+      #OUTDIR=$(dirname $OUTDIR) #set the output directory (-o ~/test/e.fa results in ~/test/)  
+      echo $OUTDIR
 
-   mkdir -p $TMPDIRNAME
-   cd $TMPDIRNAME
-   #mkdir -p tmp_ess
-   #cd tmp_ess
+      cd $OUTDIR
 
-   essCompress_prior $input_abspa $K $A $MODE
-   essCompress_main $input_directory/$TMPDIRNAME/kmers.unitigs.fa $K $A $MODE "$OUTDIR/$(basename "$input_abspa")"
-   #rm -rf tmp_ess
-   rm -rf $TMPDIRNAME
+      mkdir -p $TMPDIRNAME
+      cd $TMPDIRNAME
+
+      essCompress_prior $input_abspa $K $A $MODE
+      essCompress_main $OUTDIR/$TMPDIRNAME/kmers.unitigs.fa $K $A $MODE "$OUTDIR/$(basename "$input_abspa")"
+      #rm -rf tmp_ess
+      rm -rf $TMPDIRNAME
+   fi   
+
+   
 fi
 
 

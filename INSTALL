@@ -98,4 +98,4 @@ rm -rf dependencies/bcalm
 
 #export PATH="$PWD/bin:$PATH"
 
-echo "ESS-Compress v2.0 installation (from source) was successful!!"
+echo "ESS-Compress installation (from source) was successful!!"

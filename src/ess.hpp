@@ -628,7 +628,7 @@ public:
 
 void AbsorbGraph::run(string graph_file_name, int K, bool runFlag){
     param.VERBOSE_MODE = runFlag;
-    if(param.VERBOSE_MODE) cout<<"Running ESS-Compress v2.0 (core) "<<endl;
+    if(param.VERBOSE_MODE) cout<<"Running ESS-Compress (core) "<<endl;
     
     this->K = K;
     param.UNITIG_FILE = graph_file_name;

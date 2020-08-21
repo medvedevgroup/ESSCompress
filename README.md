@@ -41,8 +41,7 @@ $ cat examples/smallExample.fa.essd
 >
 AAAAAAACCCCCCCCCCA
 ```
-Notice that the decompressed fasta file is not the same as the original fasta file, but 
-it contains the same k-mers as smallExample.fa. You can double check this by running:
+Because the program treats k-mers and their reverse complements as equal, you might also find `TGGGGGGGGGGTTTTTTT` in the output. Notice that the decompressed fasta file is not the same as the original fasta file, but it contains the same k-mers as smallExample.fa. You can double check this by running:
 
 ```
 $ bin/essAuxValidate 11 examples/smallExample.fa examples/smallExample.fa.essd
@@ -79,12 +78,13 @@ $ bin/essCompress -i list_reads -k 5
 ESS ignores any paired-end information present in the input. 
 
 # Running in UST mode
-In our [RECOMB paper](http://doi.org/10.1007/978-3-030-45257-5_10) we described a program called UST to generate a spectrum-preserving string set (SPSS) from a set of sequences. The original UST software is now redundant because ESS can be used to generate the UST SPSS. In particular, running *essCompress* followed by *essDecompress* generates the UST SPSS. For example, if you are in the base directory *essCompress-v2.0* and want to run UST on *examples/smallExample.fa*, do:
+In our [RECOMB paper](http://doi.org/10.1007/978-3-030-45257-5_10) we described a program called UST to generate a spectrum-preserving string set (SPSS) from a set of sequences. The original UST software is now redundant because ESS can be used to generate the UST SPSS. In particular, running *essCompress* with *-u* flag generated the UST SPSS. For example, if you are in the base directory *essCompress-v2.0* and want to run UST on *examples/smallExample.fa*, do:
 ```
-$ bin/essCompress -k 11 -i examples/smallExample.fa
-$ bin/essDecompress examples/smallExample.fa.essc   
+$ bin/essCompress -u -k 11 -i examples/smallExample.fa
 ```
-The output file `examples/smallExample.fa.essd` contains the SPPS output by UST.
+The output file `examples/smallExample.fa.essd` contains the SPSS output by UST.
+
+Alternatively, running *essCompress* followed by *essDecompress* will also generate an UST SPSS. 
 
 
 # Installation from source

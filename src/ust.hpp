@@ -57,7 +57,7 @@ public:
 
 void UST::run(string graph_file_name, int K, bool runFlag){
     param.VERBOSE_MODE = runFlag;
-    cout<<"UST v2.0"<<endl;
+    cout<<"Running UST"<<endl;
     
     
     this->K= K;
@@ -138,7 +138,7 @@ void UST::run(string graph_file_name, int K, bool runFlag){
         if(system("cmp a.txt b.txt && echo '### SUCCESS: Files Are Identical! ###' || echo '### WARNING: Files Are Different! ###'")!=0) exit(3);
         if(system("rm -rf a.txt b.txt output-bcalm.txt output-my.txt list_reads.unitigs.h5 absorbDecompressed.h5")!=0) exit(3);
     }else{
-        cout<<"## [4] Skipping output validation (please validate using validate.sh in scripts folder)\n";
+        //cout<<"## [4] Skipping output validation (please validate using validate.sh in scripts folder)\n";
     }
     
 
@@ -153,13 +153,13 @@ void UST::run(string graph_file_name, int K, bool runFlag){
 
     globalStatFile.close();
     
-    cout << "------------ UST completed successfully.----------------- " << endl;
+    //cout << "------------ UST completed successfully.----------------- " << endl;
     //Output is in file "<<param.OUTPUT_FILENAME << " ------------"<<endl;
     cout << "Total number of unique "<<K<<"-mers " <<  " = " << stat.nKmers << endl;
-    cout<<"~~~"<<endl;
+    //cout<<"~~~"<<endl;
     cout << "Size of unitig based representation" <<  " = " <<stat.C_bcalm*1.0/stat.nKmers << " nucleotide/k-mer"<< endl;
     cout << "No. of strings in unitig based representation" <<  " = " <<stat.V_bcalm << endl;
-    cout<<"~~~"<<endl;
+    //cout<<"~~~"<<endl;
     cout << "Size of UST representation" <<  " = " <<ustitchBitsPerKmer/2.0 << " nucleotide/k-mer"<< endl;
     cout << "No. of strings in UST representation" <<  " = " <<stat.V_ust << endl;
 
@@ -298,7 +298,7 @@ void UST::readUnitigFile(const string& unitigFileName, vector<unitig_struct_t>& 
     if(smallestK > K ){
         cout<<"\n :::: :::: :::: :::: !!!!!!!!! WARNING !!!!!!!!!!! :::: :::: :::: ::::"<<endl;
         cout<<"The length of the smallest string we found was " << smallestK << ". Please make sure you are using the correct value of 'k' to ensure correctness of output."<<endl;
-        cout << "------------------------------------------------------"<<endl;
+        //cout << "------------------------------------------------------"<<endl;
     }
     //cout << "Complete reading input unitig file (bcalm2 file)." << endl;
 }
