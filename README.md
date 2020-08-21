@@ -6,20 +6,20 @@ A tool to compress a set of k-mers represented in FASTA/FASTQ file(s).
 
 # Installation
 
-The easist way to install ESS is to download and extract the latest Linux 64-bit [binaries](https://github.com/medvedevgroup/ESSCompress/releases/download/v2.0/essCompress-v2.0-linux-64.tar.gz).
+The easist way to install ESS is to download and extract the latest Linux 64-bit [binaries](https://github.com/medvedevgroup/ESSCompress/releases/download/v2.1/essCompress-v2.1-linux-64.tar.gz).
 
 ```
-wget https://github.com/medvedevgroup/ESSCompress/releases/download/v2.0/essCompress-v2.0-linux-64.tar.gz
-tar xvzf essCompress-v2.0-linux-64.tar.gz
+wget https://github.com/medvedevgroup/ESSCompress/releases/download/v2.1/essCompress-v2.1-linux-64.tar.gz
+tar xvzf essCompress-v2.1-linux-64.tar.gz
 ```
 
-The executable files are now located in the bin `essCompress-v2.0/bin`, relative to the working directory. Optionally, you can add this directory to your PATH variable or move all the files from this directory into another directory in your PATH.
+The executable files are now located in the bin `essCompress-v2.1/bin`, relative to the working directory. Optionally, you can add this directory to your PATH variable or move all the files from this directory into another directory in your PATH.
 
 If you prefer to install from source, see [below](#Installation-from-source).
 
 # Quick start 
 
-We illustrate the usage of ESS with an example. Please change into the base directory of the ESS installation. If you have just finished downloading and extracting ESS, you can do this by `cd essCompress-v2.0`. The distribution contains a small example fasta file:
+We illustrate the usage of ESS with an example. Please change into the base directory of the ESS installation. If you have just finished downloading and extracting ESS, you can do this by `cd essCompress-v2.1`. The distribution contains a small example fasta file:
 ```
 $cat examples/smallExample.fa
 >
