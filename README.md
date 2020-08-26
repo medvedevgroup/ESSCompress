@@ -115,7 +115,7 @@ To check that you have properly installed ESS, please try to compress a small fi
 # Citation
 
 If using ESS-Compresss in your research, please cite
-* Amatur Rahman, Rayan Chikhi and Paul Medvedev, Disk compression of k-mer sets, WABI 2020.
+* Amatur Rahman, Rayan Chikhi and Paul Medvedev, [Disk compression of k-mer sets](https://doi.org/10.4230/LIPIcs.WABI.2020.16), WABI 2020.
 
 If you are using it not for the purposes of compression but for the purposes of generating an SPSS or simulating UST, please also cite
 * Amatur Rahman and Paul Medvedev, [Representation of k-mer Sets Using Spectrum-Preserving String Sets, RECOMB 2020](http://doi.org/10.1007/978-3-030-45257-5_10).
