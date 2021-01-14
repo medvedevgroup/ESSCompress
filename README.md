@@ -57,7 +57,7 @@ The options for essCompress are
        Syntax: ./essCompress [parameters]   
 
 	   -k [int]          k-mer size (must be >= 4)
-	   -i [input-file]   Path to an input fasta or fastq file which can optionally be gzipped.  Alternatively, it can be a path to a text file containing the list of multiple input files, with one file per line.
+	   -i [input-file]   Path to an input fasta or fastq file which can optionally be gzipped.  Alternatively, it can be a path to a text file containing the list of multiple input files, with one file per line. It can also be path to a .kff file.
 
 	   optional arguments:
 	   -a [int]          Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out (default = 1).
@@ -69,6 +69,7 @@ The options for essCompress are
 	   -c                Verify correctness after compression. This checks that all the distinct k-mers in the input file appears exactly once in compressed file. K-mers and their reverse complements are treated as equal by ESS.
 	   -h                Print this help.
 	   -V                Print version number.
+	   -t 		     Output as ".kff" file. If input is a ".kff" file that uses minimizer based encoding, then output ".kff" is also minimizer based.
 
 The output of essCompress is a [spectrum-preserving string set](http://doi.org/10.1007/978-3-030-45257-5_10) representation of the input file. In other words, the output file does not contain any duplicate k-mers and the k-mers it contains are exactly the distinct k-mers in the input. A k-mer and its reverse complement are treated as equal by ESS. To decompress, run `essDecompress [filename.essc]`, where *filename.essc* is the file output by essCompress. 
 
