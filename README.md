@@ -6,11 +6,11 @@ A tool to compress a set of k-mers represented in FASTA/FASTQ file(s).
 
 # Installation
 
-The easist way to install ESS is to download and extract the latest Linux 64-bit [binaries](https://github.com/medvedevgroup/ESSCompress/archive/v2.1.tar.gz).
+The easist way to install ESS is to download and extract the latest Linux 64-bit [binaries](https://github.com/medvedevgroup/ESSCompress/releases/download/v2.2/essCompress-v2.2-linux-64.tar.gz).
 
 ```
-wget https://github.com/medvedevgroup/ESSCompress/archive/v2.1.tar.gz
-tar xvzf essCompress-v2.1-linux-64.tar.gz
+wget https://github.com/medvedevgroup/ESSCompress/releases/download/v2.2/essCompress-v2.2-linux-64.tar.gz
+tar xvzf essCompress-v2.2-linux-64.tar.gz
 ```
 
 The executable files are now located in the bin `essCompress-v2.1/bin`, relative to the working directory. Optionally, you can add this directory to your PATH variable or move all the files from this directory into another directory in your PATH.
