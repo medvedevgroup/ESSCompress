@@ -56,8 +56,8 @@ The options for essCompress are
 
        Syntax: ./essCompress [parameters]   
 
-	   -k [int]          k-mer size (must be >= 4)
-	   -i [input-file]   Path to an input fasta or fastq file which can optionally be gzipped.  Alternatively, it can be a path to a text file containing the list of multiple input files, with one file per line. It can also be path to a .kff file.
+	   -k [int]          k-mer size (must be >= 4). If input is a .kff file, this value is disregarded and the value of k is read directly from .kff file.
+	   -i [input-file]   Path to an input fasta or fastq file which can optionally be gzipped.  Alternatively, it can be a path to a text file containing the list of multiple input files, with one file per line. It can also be path to a .kff file. 
 
 	   optional arguments:
 	   -a [int]          Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out (default = 1).
