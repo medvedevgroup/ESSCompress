@@ -1,122 +1,51 @@
-ESSCompress
+ESSCompress with KFF
 ===============
 
-A tool to compress a set of k-mers represented in FASTA/FASTQ file(s).
+### Pre-requisites
+* Download ESS-Compress from [https://github.com/medvedevgroup/ESSCompress/](https://github.com/medvedevgroup/ESSCompress/)
+* Follow instructions in [https://github.com/medvedevgroup/ESSCompress/tree/kff-support/blight](https://github.com/medvedevgroup/ESSCompress/tree/kff-support/src) to install blight.
+* Install kff-tools from [https://github.com/Kmer-File-Format/kff-tools](https://github.com/Kmer-File-Format/kff-tools)
+* Install dsk from [https://github.com/GATB/dsk](https://github.com/GATB/dsk)
+
+After obtaining all the pre-requisites, follow the two examples below to compress KFF file with ESS-Compress in UST mode.
 
 
-# Installation
+#### An example to count and store the k-mers from fasta file "test.fa" in "test.kff" (Naive KFF)
 
-The easist way to install ESS is to download and extract the latest Linux 64-bit [binaries](https://github.com/medvedevgroup/ESSCompress/releases/download/v2.2/essCompress-v2.2-linux-64.tar.gz).
+* First get the k-mers and their counts using dsk
 
-```
-wget https://github.com/medvedevgroup/ESSCompress/releases/download/v2.2/essCompress-v2.2-linux-64.tar.gz
-tar xvzf essCompress-v2.2-linux-64.tar.gz
-```
-
-The executable files are now located in the bin `essCompress-v2.1/bin`, relative to the working directory. Optionally, you can add this directory to your PATH variable or move all the files from this directory into another directory in your PATH.
-
-If you prefer to install from source, see [below](#Installation-from-source).
-
-# Quick start 
-
-We illustrate the usage of ESS with an example. Please change into the base directory of the ESS installation. If you have just finished downloading and extracting ESS, you can do this by `cd essCompress-v2.1`. The distribution contains a small example fasta file:
-```
-$cat examples/smallExample.fa
->
-AAAAAAACCCCCCCCCC
->
-CCCCCCCCCCA
-```
-To compress this file using a k-mer size 11, run
-```
-$ bin/essCompress -k 11 -i examples/smallExample.fa
-```
-The output file is `examples/smallExample.fa.essc`. It is a  binary file, which stores the MFC compressed ESS representation of the k-mers in `examples/smallExample.fa`. To decompress it back into a fasta file, run
-```
-$ bin/essDecompress examples/smallExample.fa.essc   
-```
-The output file is `examples/smallExample.fa.essd`. You can check its contents
-```
-$ cat examples/smallExample.fa.essd 
->
-AAAAAAACCCCCCCCCCA
-```
-Because the program treats k-mers and their reverse complements as equal, you might also find `TGGGGGGGGGGTTTTTTT` in the output. Notice that the decompressed fasta file is not the same as the original fasta file, but it contains the same k-mers as smallExample.fa. You can double check this by running:
-
-```
-$ bin/essAuxValidate 11 examples/smallExample.fa examples/smallExample.fa.essd
-Checking whether file 'examples/smallExample.fa' and file 'examples/smallExample.fa.essd' contain same 11-mers...
-### SUCCESS: The two files contain same k-mers! ###
+```sh
+dsk -kmer-size 28 -file test.fa -abundance-min 1
+dsk2ascii -file test.h5 -out test_naive.instr
 ```
 
-
-# Usage details
-
-The options for essCompress are
-
-       Syntax: ./essCompress [parameters]   
-
-	   -k [int]          k-mer size (must be >= 4). If input is a .kff file, this value is disregarded and the value of k is read directly from .kff file.
-	   -i [input-file]   Path to an input fasta or fastq file which can optionally be gzipped.  Alternatively, it can be a path to a text file containing the list of multiple input files, with one file per line. It can also be path to a .kff file. 
-
-	   optional arguments:
-	   -a [int]          Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out (default = 1).
-	   -o [output-dir]   Specify output directory
-	   -f                Fast mode. It can be twice as fast and use several times less RAM, at the cost of a smaller compression ratio (usually 10% more space).
-	   -u                UST mode (output an SPSS, which does not contain any duplicate k-mers and the k-mers it contains are exactly the distinct k-mers in the input. A k-mer and its reverse complement are treated as equal.)
-	   -v                Enable verbose mode: print more useful information.
-	   
-	   -c                Verify correctness after compression. This checks that all the distinct k-mers in the input file appears exactly once in compressed file. K-mers and their reverse complements are treated as equal by ESS.
-	   -h                Print this help.
-	   -V                Print version number.
-	   -t 		     Output as ".kff" file. If input is a ".kff" file that uses minimizer based encoding, then output ".kff" is also minimizer based.
-
-The output of essCompress is a [spectrum-preserving string set](http://doi.org/10.1007/978-3-030-45257-5_10) representation of the input file. In other words, the output file does not contain any duplicate k-mers and the k-mers it contains are exactly the distinct k-mers in the input. A k-mer and its reverse complement are treated as equal by ESS. To decompress, run `essDecompress [filename.essc]`, where *filename.essc* is the file output by essCompress. 
-
-## Miscellenous information
-In order to pass several files as input, you can generate the list of files (one file per line) following this example. If you are in the base directory of essCompress, run
+* Next, get the kff file from "test_naive.instr"
 ```
-$ ls -1 examples/*.fa > list_reads   
-$ bin/essCompress -i list_reads -k 5
+kff-tools instr -i test_naive.instr -o test_naive.kff --kmer-size 28 -d 1  
 ```
 
-ESS ignores any paired-end information present in the input. 
+#### An example to convert "naive KFF" file to compressed  "ESS-Compressed KFF" 
 
-# Running in UST mode
-In our [RECOMB paper](http://doi.org/10.1007/978-3-030-45257-5_10) we described a program called UST to generate a spectrum-preserving string set (SPSS) from a set of sequences. The original UST software is now redundant because ESS can be used to generate the UST SPSS. In particular, running *essCompress* with *-u* flag generated the UST SPSS. For example, if you are in the base directory *essCompress-v2.0* and want to run UST on *examples/smallExample.fa*, do:
-```
-$ bin/essCompress -u -k 11 -i examples/smallExample.fa
-```
-The output file `examples/smallExample.fa.essd` contains the SPSS output by UST.
-
-Alternatively, running *essCompress* followed by *essDecompress* will also generate an UST SPSS. 
-
-
-# Installation from source
-
-The following are pre-requisites
-- Linux operating system (64 bit)
-- Git
-- GCC >= 4.8 or a C++11 capable compiler   
-- CMake 3.1+   
-
-Download source and install:
+* First, get the k-mers and their counts from kff file in plaintext format
 
 ```
-git clone https://github.com/medvedevgroup/ESSCompress
-cd ESSCompress
-./INSTALL
+kff-tools outstr -i test_naive.kff > test2.instr 
+```
+* Get the k-mers in fasta format (test2.fa) and then run ESS-Compress (in UST mode) to obtain "test2.fa.essd"
+
+```sh
+cat test2.instr | cut -f1 -d" " | awk '{print ">contig\n" $0}' > test2.fa
+essCompress -i test2.fa -k 28 -u 
 ```
 
-Upon successful execution of this script, you will see linux binaries for [BCALM](https://github.com/GATB/bcalm) (`essAuxBcalm`), [DSK](https://github.com/GATB/dsk) (`essAuxDsk` and `essAuxDsk2ascii`) and [MFCompress](http://bioinformatics.ua.pt/software/mfcompress/) (`essAuxMFCompressC` and `essAuxMFCompressD`) in the `bin` folder, along with `essAuxValidate`, `essAuxCompress` and `essAuxDecompress`. All of these are auxiliary executables. The main two executables are `essCompress` and `essDecompress`.
+* Use Blight to link the data and (using 8 cores) generate "test2.essd_instr"
+```
+blight/blight-ess -k 28 -i test2.fa.essd -d test2.instr -t 8   
+```
 
-To check that you have properly installed ESS, please try to compress a small file in the [Quick start](#Quick-start) section.
+* Finally, generate ESS-compressed KFF (test2_compressed.kff)
 
-
-# Citation
-
-If using ESS-Compresss in your research, please cite
-* Amatur Rahman, Rayan Chikhi and Paul Medvedev, [Disk compression of k-mer sets, WABI 2020](https://doi.org/10.4230/LIPIcs.WABI.2020.16).
-
-If you are using it not for the purposes of compression but for the purposes of generating an SPSS or simulating UST, please also cite
-* Amatur Rahman and Paul Medvedev, [Representation of k-mer Sets Using Spectrum-Preserving String Sets, RECOMB 2020](http://doi.org/10.1007/978-3-030-45257-5_10).
+```
+ kff-tools instr -i test2.essd_instr -o test2_compressed.kff -k 28 -d 2 -m $(bash blight/getmaxlen.sh test2.essd_instr) --delimiter ' ' --data-delimiter ','
+``` 
+ 
