@@ -105,14 +105,14 @@ make -j 8 #after this we are inside build
 failureMessage "BCALM installation"
 mv bcalm ../../../bin/essAuxBcalm
 
-echo "Now installing MFCompress........"
-cd ../../../
-cd dependencies/mfc1.01/
-make -f Makefile.linux
-failureMessage "MFC installation"
-mv MFCompressC ../../bin/essAuxMFCompressC
-mv MFCompressD ../../bin/essAuxMFCompressD
-make -f Makefile.linux clean
+#echo "Now installing MFCompress........"
+#cd ../../../
+#cd dependencies/mfc1.01/
+#make -f Makefile.linux
+#failureMessage "MFC installation"
+#mv MFCompressC ../../bin/essAuxMFCompressC
+#mv MFCompressD ../../bin/essAuxMFCompressD
+#make -f Makefile.linux clean
 
 cd ../../
 rm -rf dependencies/dsk
