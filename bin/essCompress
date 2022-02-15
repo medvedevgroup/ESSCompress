@@ -1,5 +1,5 @@
 #!/bin/bash
-#Last modified: Aug 21, 11 AM
+#Last modified: Feb 15, 2022
 
 DDEBUG=0
 TMPDIRNAME=$(echo "tmp_ess_$(date +"%s")")
@@ -40,13 +40,15 @@ Help()
    echo
    echo "mandatory arguments:"
    echo "-k [int]          k-mer size (must be >=4)"
-   echo "-i [input-file]   Path to input file. Input file can be either of these 2 formats:"
+   echo "-i [input-file]   Path to input file. Input file can be either of these 3 formats:"
    echo "                     1. a single fasta/fastq file (either gzipped or not)   "
    echo "                     2. a single text file containing the list of multiple fasta/fastq files (one file per line)	"
+   echo "                     3. a single .kff file. In this case, output is a .kff file after compressing in UST mode."
    echo
    echo "optional arguments:"
    echo "-a [int]          Default=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out. "
    echo "-o [output-dir]   Specify output directory"
+   echo "-t [int]          Default=1. Number of threads (used by bcalm, dsk and blight). "
    echo "-f                Fast compression mode: uses less memory, but achieves smaller compression ratio."
    echo "-u                UST mode (output an SPSS, which does not contain any duplicate k-mers and the k-mers it contains are exactly the distinct k-mers in the input. A k-mer and its reverse complement are treated as equal.)"
    echo "-v                Enable verbose mode: print more useful information."
@@ -61,7 +63,7 @@ Help()
 
 Version()
 {
-   echo "ESS-Compress v2.1"
+   echo "ESS-Compress v3.0"
 }
 
 ################################################################################
@@ -73,10 +75,10 @@ validate(){
    DECOMPRESSED_FILE=$3
    echo "-------"
    echo "Verifying correctness of ESS-Compress core algorithm...";
-   $PPATH/bin/essAuxDsk -file $UNITIG_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out unitigs.h5
-   $PPATH/bin/essAuxDsk -file $DECOMPRESSED_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out spss.h5
-   $PPATH/bin/essAuxDsk2ascii -file unitigs.h5 -out unitigs.txt  -verbose 0
-   $PPATH/bin/essAuxDsk2ascii -file spss.h5 -out spss.txt  -verbose 0
+   $PPATH/bin/essAuxDsk -nb-cores $NUM_CORES -file $UNITIG_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out unitigs.h5
+   $PPATH/bin/essAuxDsk -nb-cores $NUM_CORES -file $DECOMPRESSED_FILE -kmer-size $K -abundance-min 1  -verbose 0 -out spss.h5
+   $PPATH/bin/essAuxDsk2ascii -nb-cores $NUM_CORES -file unitigs.h5 -out unitigs.txt  -verbose 0
+   $PPATH/bin/essAuxDsk2ascii -nb-cores $NUM_CORES -file spss.h5 -out spss.txt  -verbose 0
    #echo "doing highly  accurate validation................"
    #echo "Sorting k-mers for validation................"
    #sort -k 1 -n unitigs.txt -o sorted_unitigs.txt; sort -k 1 -n spss.txt -o sorted_spss.txt
@@ -107,19 +109,19 @@ essCompress_prior(){
    ## get unitigs
    if [ "$K" -gt "10" ]; then
       if [[ VERBOSEMODE -eq 0 ]]; then
-            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bin/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 0 > bcalm_output
+            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bin/essAuxBcalm -nb-cores $NUM_CORES -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 0 > bcalm_output
       else
             echo "Running BCALM2 to get compacted de Bruijn graph..."
-            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bin/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 0
+            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bin/essAuxBcalm -nb-cores $NUM_CORES -in $L -out kmers -kmer-size $K  -abundance-min $A -verbose 1
       fi
 
 
    elif [ "$K" -gt "3" ]; then
       if [[ VERBOSEMODE -eq 0 ]]; then
-            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bin/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -minimizer-size 2 -verbose 0 > bcalm_output
+            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bin/essAuxBcalm -nb-cores $NUM_CORES -in $L -out kmers -kmer-size $K  -abundance-min $A -minimizer-size 2 -verbose 0 > bcalm_output
       else
             echo "Running BCALM2 to get compacted de Bruijn graph..."
-            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bin/essAuxBcalm -in $L -out kmers -kmer-size $K  -abundance-min $A -minimizer-size 2 -verbose 0
+            /usr/bin/time  -f "%M\t%e" --output-file=mem_bcalm $PPATH/bin/essAuxBcalm -nb-cores $NUM_CORES -in $L -out kmers -kmer-size $K  -abundance-min $A -minimizer-size 2 -verbose 1
       fi
 
    else
@@ -243,6 +245,7 @@ inputset=0
 validateset=0
 fastmode=0
 spssmode=0
+NUM_CORES=1
 #verbosemode=0
 ################################################################################
 K=0
@@ -253,7 +256,7 @@ MODE=0
 # Process the input options. Add options as needed.                            #
 ################################################################################
 # Get the options
-while getopts "vVhufck:i:a:o:" option; do
+while getopts "vVhufct:k:i:a:o:" option; do
    case $option in
       u) spssmode=1
          MODE=2
@@ -272,19 +275,13 @@ while getopts "vVhufck:i:a:o:" option; do
          #exit;;
       a) A=$OPTARG
          ;;
-         #exit;;
-      # m) MODE=$OPTARG
-      #   [[ ! $MODE =~ 0|1|2 ]] && {
-      #       echo "Incorrect options provided, use either 0 (ess), or 1 (ess-tip) or 2 (spss)"
-      #       exit 1
-      #   }
-      #   modeset=1
-      #   ;;
-
       f) #
         fastmode=1
         MODE=1
         ;;
+      t)
+      NUM_CORES=$OPTARG
+      ;;
       # s) #
       #   MODE=2
       #   ;;
@@ -305,9 +302,9 @@ while getopts "vVhufck:i:a:o:" option; do
       o) OUTDIR=${OPTARG}
          outdirset=1
          ;;
-      V) 
+      V)
          Version
-         exit 
+         exit
          ;;
      \?) # incorrect option
          echo "Error: Invalid option,  Use -h for help."
@@ -319,11 +316,6 @@ if [[ -z $1 ]]; then
    Help
 fi
 
-if [[ K -eq 0 ]]; then
-    echo "You must specify a valid value for k-mer size [-k]. Use -h for help."
-    Help
-    exit 2
-fi
 
 if [[ inputset -eq 0 ]]; then
     echo "You must specify a valid input file [-i]. Use -h for help."
@@ -341,23 +333,82 @@ fi
 #     exit 2
 # fi
 
-fastaORcdbg=0
-if [[ fastaORcdbg -eq 0 ]]; then
-    Version
+
+
+
+#STARTING.................
+Version
+#check if input is a kff file
+iskff=0
+
+input_abspa=$(abspath $INPUTFILE)  #absolute path: (i.e. /s/rhodo/list_reads)
+input_directory=$(dirname $input_abspa) #get the directory of input file (i.e. /s/rhodo/)
+
+
+$PPATH/bin/essAuxKffTools validate -i $input_abspa >/dev/null 2>&1
+notkff=$(echo $?)
+echo "value of $notkff"
+if [[ notkff -eq 0 ]]; then
+    echo "Input is a .kff file. Final output will be a .kff file compressed in UST mode."
+
+    if [[ kset -eq 1 ]]; then
+        echo "WARNING: Disregarding -k parameter"
+    fi
+    cd $input_directory
+    kffbasename=$(basename $input_abspa .kff)
+    echo "basename is $kffbasename"
+
+    $PPATH/bin/essAuxKffTools outstr -i "$input_abspa" > "ess_tmp_$kffbasename.instr"
+    cat "ess_tmp_$kffbasename.instr" | cut -f1 -d" " | awk '{print ">contig\n" $0}' > "ess_tmp_$kffbasename.fa"
+    K=$(head -n 1 "ess_tmp_$kffbasename.instr" | cut -f1 -d" " | awk '{print(length($1))}')
+    echo "k-mer size = $K"
+
+    if [[ K -lt 13 ]]; then
+      echo "An unknown error occurrs in running Blight for k < 13."
+      exit 3
+    fi
+
+    $PPATH/bin/essCompress -k $K -i "$input_directory/ess_tmp_$kffbasename.fa" -u
+
+    mkdir -p wdir
+    $PPATH/bin/essAuxBlight -k $K -i "$input_directory/ess_tmp_$kffbasename.fa.essd"  -d   "$input_directory/ess_tmp_$kffbasename.instr" -t $NUM_CORES
+    $PPATH/bin/essAuxKffTools instr -i "ess_tmp_$kffbasename.fa.essd.essd_instr" -o "$kffbasename.compressed.kff" -k $K -d 2 -m $(bash $PPATH/bin/getMaxLen "ess_tmp_$kffbasename.fa.essd.essd_instr") --delimiter ' ' --data-delimiter ','
+
+
+    if [[ outdirset -eq 1 ]]; then
+        OUTDIR=$(abspath $OUTDIR)
+        mv "$kffbasename.compressed.kff" $OUTDIR/
+        echo "Final compresssed .kff file is in $OUTDIR/$kffbasename.compressed.kff"
+    else
+
+      echo "Final compresssed .kff file is in $input_directory/$kffbasename.compressed.kff"
+    fi
+    rm -rf $input_directory/ess_tmp_*
+   rm -rf $input_directory/wdir
+fi
+
+
+if [[ notkff -ne 0 ]]; then
+
+    if [[ K -eq 0 ]]; then
+        echo "You must specify a valid value for k-mer size [-k] for non-kff files. Use -h for help."
+        Help
+        exit 2
+    fi
 
     input_abspa=$(abspath $INPUTFILE)  #absolute path: (i.e. /s/rhodo/list_reads)
     input_directory=$(dirname $input_abspa) #get the directory of input file (i.e. /s/rhodo/)
 
     if [[ outdirset -eq 0 ]]; then
-      
+
       OUTDIR=$(dirname $input_abspa) #set the output directory same as that of input file (i.e. /s/rhodo/)
-    
+
       cd $OUTDIR
 
+      ONLYFILENAME=$(basename -a $input_abspa)
+      TMPDIRNAME="tmp_ess_$ONLYFILENAME"
       mkdir -p $TMPDIRNAME
       cd $TMPDIRNAME
-      #mkdir -p tmp_ess
-      #cd tmp_ess
 
       essCompress_prior $input_abspa $K $A $MODE
       essCompress_main $input_directory/$TMPDIRNAME/kmers.unitigs.fa $K $A $MODE "$OUTDIR/$(basename "$input_abspa")"
@@ -368,11 +419,13 @@ if [[ fastaORcdbg -eq 0 ]]; then
 
    if [[ outdirset -eq 1 ]]; then
       OUTDIR=$(abspath $OUTDIR)
-      #OUTDIR=$(dirname $OUTDIR) #set the output directory (-o ~/test/e.fa results in ~/test/)  
+      #OUTDIR=$(dirname $OUTDIR) #set the output directory (-o ~/test/e.fa results in ~/test/)
       echo $OUTDIR
 
       cd $OUTDIR
 
+      ONLYFILENAME=$(basename -a $input_abspa)
+      TMPDIRNAME="tmp_ess_$ONLYFILENAME"
       mkdir -p $TMPDIRNAME
       cd $TMPDIRNAME
 
@@ -380,9 +433,7 @@ if [[ fastaORcdbg -eq 0 ]]; then
       essCompress_main $OUTDIR/$TMPDIRNAME/kmers.unitigs.fa $K $A $MODE "$OUTDIR/$(basename "$input_abspa")"
       #rm -rf tmp_ess
       rm -rf $TMPDIRNAME
-   fi   
-
-   
+   fi
 fi
 
 
