@@ -67,6 +67,7 @@ cd dependencies
 
 echo "Now installing Blight........"
 cd blight
+make clean
 make -j 8
 cp blight-ess ../../bin/essAuxBlight
 make clean
