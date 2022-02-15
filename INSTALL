@@ -39,7 +39,10 @@ PPATH=$(abspath $(dirname $0))
 cd $PPATH/
 
 rm -rf $PPATH/dependencies/bcalm
+rm -rf $PPATH/dependencies/kff-tools
 rm -rf $PPATH/dependencies/dsk
+rm -rf $PPATH/bin/essAuxKffTools
+rm -rf $PPATH/bin/essAuxBlight
 rm -rf $PPATH/bin/essAuxCompress
 rm -rf $PPATH/bin/essAuxDecompress
 rm -rf $PPATH/bin/essAuxDsk
@@ -59,6 +62,24 @@ failureMessage "ESS-Compress core program installation"
 mkdir -p dependencies
 cd dependencies
 
+
+
+
+echo "Now installing Blight........"
+cd blight
+make -j 8
+cp blight-ess ../../bin/essAuxBlight
+make clean
+cd ../
+
+echo "Now installing kff-tools........"
+
+git clone --recursive https://github.com/Kmer-File-Format/kff-tools
+cd kff-tools
+mkdir build && cd build && cmake .. && make -j 8
+cd ../../
+cp kff-tools/bin/kff-tools ../bin/essAuxKffTools
+rm -rf kff-tools
 
 echo "Now installing DSK........"
 # get a local copy of source code of DSK
