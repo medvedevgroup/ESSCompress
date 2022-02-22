@@ -8,7 +8,7 @@ A tool to compress a set of k-mers represented in FASTA/FASTQ/KFF file(s).
 There are 2 ways to install ESS-Compress: either from source or from pre-compiled binaries.
 
 
-###1. Installation from source
+### 1. Installation from source
 
 #### Pre-requisites
 - Linux operating system (64 bit)
@@ -31,7 +31,7 @@ cd ESSCompress
 
 Upon successful execution of this script, you will see linux binaries for [kff-tools](https://github.com/Kmer-File-Format/kff-tools) (`essAuxKffTools`), [Blight](https://github.com/malfoy/blight) (`essAuxBlight`), [BCALM](https://github.com/GATB/bcalm) (`essAuxBcalm`), [DSK](https://github.com/GATB/dsk) (`essAuxDsk` and `essAuxDsk2ascii`) and [MFCompress](http://bioinformatics.ua.pt/software/mfcompress/) (`essAuxMFCompressC` and `essAuxMFCompressD`) in the `aux` folder, along with `essAuxValidate`, `essAuxCompress` and `essAuxDecompress` and `getMaxLen`.
 
-###2. Installation from pre-compiled binaries
+### 2. Installation from pre-compiled binaries
 
 #### Requirements
 
