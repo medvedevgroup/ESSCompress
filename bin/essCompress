@@ -1,10 +1,12 @@
 #!/bin/bash
-#Last modified: Feb 15, 2022
+#Last modified: Feb 22, 2022
 
 DDEBUG=0
-TMPDIRNAME=$(echo "tmp_ess_$(date +"%s")")
+TMPDIRNAME=$(echo "ess_tmp_$(date +"%s")")
 VERBOSEMODE=0
 input_directory=""
+
+DATA_SIZE_KFF=1
 
 isVerboseMode () {
    [[ VERBOSEMODE -eq 1 ]]
@@ -49,8 +51,10 @@ Help()
    echo "-a [int]          Default=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out. "
    echo "-o [output-dir]   Specify output directory"
    echo "-t [int]          Default=1. Number of threads (used by bcalm, dsk and blight). "
+   echo "-x [int]          Default=1. Bytes allocated for associated abundance data per k-mer. For highest compression with kff, by default the program limits 1 byte per k-mer (max value 255)."
    echo "-f                Fast compression mode: uses less memory, but achieves smaller compression ratio."
    echo "-u                UST mode (output an SPSS, which does not contain any duplicate k-mers and the k-mers it contains are exactly the distinct k-mers in the input. A k-mer and its reverse complement are treated as equal.)"
+   echo "-d                DEBUG mode. If debug mode is enabled, no intermediate files are removed."
    echo "-v                Enable verbose mode: print more useful information."
    echo "-c                Verify correctness: check that all the distinct k-mers in the input file appears exactly once in compressed file."
    echo "-h                Print this Help"
@@ -63,7 +67,7 @@ Help()
 
 Version()
 {
-   echo "ESS-Compress v3.0"
+   echo "ESS-Compress v3.1"
 }
 
 ################################################################################
@@ -150,7 +154,7 @@ essCompress_main(){
    KMERS_FA=$L
 
 
-   cd $O2  #this is inside tmp_ess/
+   cd $O2  #this is inside ess_tmp..../
 
    /usr/bin/time  -f "%M\t%e" --output-file=mem_ess_$TYPE $PPATH/bin/essAuxCompress -i $L -k $K -t $TYPE -v $VERBOSEMODE
    failureMessage "ESS-Compress core"
@@ -202,12 +206,6 @@ essCompress_main(){
 
    cd $O2
    cd ../
-
-   if [[ DDEBUG -eq 0 ]];  then
-    rm -rf tmp_ess
-   fi
-
-
 }
 
 countNonDNA(){
@@ -227,7 +225,9 @@ failureMessage(){
    else
       #echo "----------------------------"
       echo "$1 FAILED. Run with -v flag to get potentially more information on the cause of failure."
-      rm -rf $input_directory/$TMPDIRNAME
+      if [[ DDEBUG -eq 0 ]]; then
+        rm -rf $input_directory/$TMPDIRNAME
+      fi
       #echo "----------------------------"
       exit
    fi
@@ -279,19 +279,12 @@ while getopts "vVhufct:k:i:a:o:" option; do
         fastmode=1
         MODE=1
         ;;
+      d) #
+          DDEBUG=1
+          ;;
       t)
       NUM_CORES=$OPTARG
-      ;;
-      # s) #
-      #   MODE=2
-      #   ;;
-      # t) fastaORcdbg=$OPTARG
-      #   [[ ! $fastaORcdbg =~ 0|1 ]] && {
-      #       echo "Incorrect options provided, use either 0 (fasta/q), or 1 (cdbg)"
-      #       exit 1
-      #   }
-      #   fastaORcdbgset=1
-      #   ;;
+        ;;
       i) INPUTFILE=${OPTARG}
          inputset=1
          if [ ! -f "$INPUTFILE" ]; then
@@ -316,38 +309,30 @@ if [[ -z $1 ]]; then
    Help
 fi
 
-
 if [[ inputset -eq 0 ]]; then
     echo "You must specify a valid input file [-i]. Use -h for help."
     Help
     exit 2
 fi
 
-# if [[ outdirset -eq 0 ]]; then
-#     echo "You must specify output directory. Use -h for help."
-#     exit 2
-# fi
-
-# if [[ modeset -eq 0 ]]; then
-#     echo "You must specify compression mode [-m]. Use -h for help."
-#     exit 2
-# fi
-
-
-
-
 #STARTING.................
+echo "Running... "
 Version
-#check if input is a kff file
-iskff=0
+iskff=0 #1 if input is a kff file
 
 input_abspa=$(abspath $INPUTFILE)  #absolute path: (i.e. /s/rhodo/list_reads)
 input_directory=$(dirname $input_abspa) #get the directory of input file (i.e. /s/rhodo/)
 
+notkff=0
+if [[ VERBOSEMODE -eq 0 ]]; then
+  $PPATH/bin/essAuxKffTools validate -i $input_abspa >/dev/null 2>&1
+  notkff=$(echo $?)
+else
+  $PPATH/bin/essAuxKffTools validate -i $input_abspa
+  notkff=$(echo $?)
+  echo "value of kff-tools exit code: $notkff"
+fi
 
-$PPATH/bin/essAuxKffTools validate -i $input_abspa >/dev/null 2>&1
-notkff=$(echo $?)
-echo "value of $notkff"
 if [[ notkff -eq 0 ]]; then
     echo "Input is a .kff file. Final output will be a .kff file compressed in UST mode."
 
@@ -356,9 +341,9 @@ if [[ notkff -eq 0 ]]; then
     fi
     cd $input_directory
     kffbasename=$(basename $input_abspa .kff)
-    echo "basename is $kffbasename"
+    echo "File basename is $kffbasename"
 
-    $PPATH/bin/essAuxKffTools outstr -i "$input_abspa" > "ess_tmp_$kffbasename.instr"
+    /usr/bin/time  -f "%M\t%e" --output-file=ess_tmp_mem_kff_outstr $PPATH/bin/essAuxKffTools outstr -i "$input_abspa" > "ess_tmp_$kffbasename.instr"
     cat "ess_tmp_$kffbasename.instr" | cut -f1 -d" " | awk '{print ">contig\n" $0}' > "ess_tmp_$kffbasename.fa"
     K=$(head -n 1 "ess_tmp_$kffbasename.instr" | cut -f1 -d" " | awk '{print(length($1))}')
     echo "k-mer size = $K"
@@ -368,23 +353,30 @@ if [[ notkff -eq 0 ]]; then
       exit 3
     fi
 
-    $PPATH/bin/essCompress -k $K -i "$input_directory/ess_tmp_$kffbasename.fa" -u
-
     mkdir -p wdir
-    $PPATH/bin/essAuxBlight -k $K -i "$input_directory/ess_tmp_$kffbasename.fa.essd"  -d   "$input_directory/ess_tmp_$kffbasename.instr" -t $NUM_CORES
-    $PPATH/bin/essAuxKffTools instr -i "ess_tmp_$kffbasename.fa.essd.essd_instr" -o "$kffbasename.compressed.kff" -k $K -d 2 -m $(bash $PPATH/bin/getMaxLen "ess_tmp_$kffbasename.fa.essd.essd_instr") --delimiter ' ' --data-delimiter ','
-
+    if [[ DDEBUG -eq 1 ]]; then
+      /usr/bin/time  -f "%M\t%e" --output-file=ess_tmp_mem_bcalm_ust $PPATH/bin/essCompress -k $K -i "$input_directory/ess_tmp_$kffbasename.fa" -u
+      /usr/bin/time  -f "%M\t%e" --output-file=ess_tmp_mem_blight $PPATH/bin/essAuxBlight -k $K -i "$input_directory/ess_tmp_$kffbasename.fa.essd"  -d   "$input_directory/ess_tmp_$kffbasename.instr" -t $NUM_CORES
+      /usr/bin/time  -f "%M\t%e" --output-file=ess_tmp_mem_kff_instr $PPATH/bin/essAuxKffTools instr -i "ess_tmp_$kffbasename.fa.essd.essd_instr" -o "$kffbasename.compressed.kff" -k $K -d $DATA_SIZE_KFF -m $(bash $PPATH/bin/getMaxLen "ess_tmp_$kffbasename.fa.essd.essd_instr") --delimiter ' ' --data-delimiter ','
+    else
+      $PPATH/bin/essCompress -k $K -i "$input_directory/ess_tmp_$kffbasename.fa" -u
+      $PPATH/bin/essAuxBlight -k $K -i "$input_directory/ess_tmp_$kffbasename.fa.essd"  -d   "$input_directory/ess_tmp_$kffbasename.instr" -t $NUM_CORES
+      $PPATH/bin/essAuxKffTools instr -i "ess_tmp_$kffbasename.fa.essd.essd_instr" -o "$kffbasename.compressed.kff" -k $K -d $DATA_SIZE_KFF -m $(bash $PPATH/bin/getMaxLen "ess_tmp_$kffbasename.fa.essd.essd_instr") --delimiter ' ' --data-delimiter ','
+    fi
 
     if [[ outdirset -eq 1 ]]; then
         OUTDIR=$(abspath $OUTDIR)
         mv "$kffbasename.compressed.kff" $OUTDIR/
         echo "Final compresssed .kff file is in $OUTDIR/$kffbasename.compressed.kff"
     else
-
-      echo "Final compresssed .kff file is in $input_directory/$kffbasename.compressed.kff"
+        echo "Final compresssed .kff file is in $input_directory/$kffbasename.compressed.kff"
     fi
-    rm -rf $input_directory/ess_tmp_*
-   rm -rf $input_directory/wdir
+
+    if [[ DDEBUG -eq 0 ]];  then
+      rm -rf $input_directory/ess_tmp_*
+    fi
+
+    rm -rf $input_directory/wdir
 fi
 
 
@@ -406,14 +398,15 @@ if [[ notkff -ne 0 ]]; then
       cd $OUTDIR
 
       ONLYFILENAME=$(basename -a $input_abspa)
-      TMPDIRNAME="tmp_ess_$ONLYFILENAME"
+      TMPDIRNAME="ess_tmp_$ONLYFILENAME"
       mkdir -p $TMPDIRNAME
       cd $TMPDIRNAME
 
       essCompress_prior $input_abspa $K $A $MODE
       essCompress_main $input_directory/$TMPDIRNAME/kmers.unitigs.fa $K $A $MODE "$OUTDIR/$(basename "$input_abspa")"
-      #rm -rf tmp_ess
-      rm -rf $TMPDIRNAME
+      if [[ DDEBUG -eq 0 ]];  then
+        rm -rf $TMPDIRNAME
+      fi
     fi
 
 
@@ -425,22 +418,15 @@ if [[ notkff -ne 0 ]]; then
       cd $OUTDIR
 
       ONLYFILENAME=$(basename -a $input_abspa)
-      TMPDIRNAME="tmp_ess_$ONLYFILENAME"
+      TMPDIRNAME="ess_tmp_$ONLYFILENAME"
       mkdir -p $TMPDIRNAME
       cd $TMPDIRNAME
 
       essCompress_prior $input_abspa $K $A $MODE
       essCompress_main $OUTDIR/$TMPDIRNAME/kmers.unitigs.fa $K $A $MODE "$OUTDIR/$(basename "$input_abspa")"
-      #rm -rf tmp_ess
-      rm -rf $TMPDIRNAME
+
+      if [[ DDEBUG -eq 0 ]];  then
+        rm -rf $TMPDIRNAME
+      fi
    fi
 fi
-
-
-# if [[ fastaORcdbg -eq 1 ]]; then
-#    input_abspa=$(abspath $INPUTFILE)
-#    input_directory=$(dirname $input_abspa)
-#    OUTDIR=$(dirname $input_abspa)
-#    OUTDIR="$OUTDIR/$(basename "$input_abspa")"
-#    aux/essAuxCompressompress_main $input_abspa $K $A $MODE $OUTDIR
-# fi
