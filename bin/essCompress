@@ -51,7 +51,7 @@ Help()
    echo "-a [int]          Default=1. Sets a threshold X, such that k-mers that appear less than X times in the input dataset are filtered out. "
    echo "-o [output-dir]   Specify output directory"
    echo "-t [int]          Default=1. Number of threads (used by bcalm, dsk and blight). "
-   echo "-x [int]          Default=1. Bytes allocated for associated abundance data per k-mer. For highest compression with kff, by default the program limits 1 byte per k-mer (max value 255)."
+   echo "-x [int]          Default=1. Bytes allocated for associated abundance data per k-mer in kff. For highest compression with kff, by default the program limits 1 byte per k-mer (max value 255)."
    echo "-f                Fast compression mode: uses less memory, but achieves smaller compression ratio."
    echo "-u                UST mode (output an SPSS, which does not contain any duplicate k-mers and the k-mers it contains are exactly the distinct k-mers in the input. A k-mer and its reverse complement are treated as equal.)"
    echo "-d                DEBUG mode. If debug mode is enabled, no intermediate files are removed."
@@ -256,7 +256,7 @@ MODE=0
 # Process the input options. Add options as needed.                            #
 ################################################################################
 # Get the options
-while getopts "vVhufct:k:i:a:o:" option; do
+while getopts "vVhufcx:t:k:i:a:o:" option; do
    case $option in
       u) spssmode=1
          MODE=2
@@ -285,6 +285,9 @@ while getopts "vVhufct:k:i:a:o:" option; do
       t)
       NUM_CORES=$OPTARG
         ;;
+      x)
+        DATA_SIZE_KFF=$OPTARG
+          ;;
       i) INPUTFILE=${OPTARG}
          inputset=1
          if [ ! -f "$INPUTFILE" ]; then
