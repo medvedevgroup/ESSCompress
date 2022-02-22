@@ -44,7 +44,7 @@ ERR024186
 
 ## Steps
 
-### Installation of ESS-Compress with KFF support (v3.0)
+### Installation of ESS-Compress with KFF support (v3.1)
 
 #### Requirements
 - Linux operating system (64 bit)   
@@ -54,6 +54,8 @@ ERR024186
 
 #### Install from source:
 
+
+(Use [commit a1ed1c](https://github.com/medvedevgroup/ESSCompress/commit/a1ed1c2be7887fdd091d872c87077dca092c543a) for the experiments in paper)
 ```
 git clone https://github.com/medvedevgroup/ESSCompress   
 cd ESSCompress  
@@ -62,9 +64,9 @@ cd ESSCompress
 
 #### Alternatively, install from binaries:
 Download the latest Linux 64-bit binaries (v3.0).  
-`wget https://github.com/medvedevgroup/ESSCompress/releases/download/v3.0/essCompress-v3.0-linux-64.tar.gz`   
-`tar xvzf essCompress-v3.0-linux-64.tar.gz`   
-`cd essCompress-v3.0/`
+`wget https://github.com/medvedevgroup/ESSCompress/releases/download/v3.1/essCompress-v3.1-linux-64.tar.gz`   
+`tar xvzf essCompress-v3.1-linux-64.tar.gz`   
+`cd essCompress-v3.1/`
 
 
 ### Experiments with ESS-Compress and KFF
